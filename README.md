@@ -2,7 +2,7 @@
 Informatics 117 Team 6
 Emily Navarro
 
-Brenda La
+Brenda La\n
 David Pham
 Eric Chou
 Jose Gomez

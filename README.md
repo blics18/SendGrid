@@ -1,7 +1,6 @@
 # SendGrid
 
 Informatics 117 Team 6
-Emily Navarro
 
 - Brenda La
 - David Pham

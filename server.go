@@ -43,20 +43,27 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	
+	defer r.Body.Close()
+
 
 	var p Payload
 
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		panic(err)
+    		w.WriteHeader(http.StatusBadRequest)
+    		w.Write([]byte("Unable to parse json body"))
+    		return
 	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("success"))
 
 	fmt.Println("User ID: ", p.UserData.UserID)
 	fmt.Println("User Emails: ", p.UserData.Emails)
 
 	// *** Can write back to Client here if we want
 
-	defer r.Body.Close()
 }
 
 func main() {

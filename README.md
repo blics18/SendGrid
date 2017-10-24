@@ -1,6 +1,6 @@
 # SendGrid
 
-Informatics 117 Team 6
+Informatics 117 Team Optimize Prime
 
 - Brenda La
 - David Pham

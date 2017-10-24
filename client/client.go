@@ -1,12 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"time"
-	"bytes"
 )
 
 // *** Randomly Generate Data ***
@@ -27,9 +28,8 @@ func RandStringRunes(n int) string {
 
 func MakeRandomEmail() string {
 	user := RandStringRunes(10)
-	domain := RandStringRunes(5)
-	tld := RandStringRunes(3)
-	email := fmt.Sprintf("%s@%s.%s", user, domain, tld)
+	domain := MakeEmailDomain()
+	email := fmt.Sprintf("%s@%s", user, domain)
 	return email
 }
 
@@ -40,9 +40,16 @@ func MakeRandomEmails(n int) []string {
 	}
 	return email_list
 }
-
-func MakeRandomUserID(n int, offset int) int {
-	return rand.Intn(n) + offset
+func MakeEmailDomain() string {
+	suffix := make([]string, 0)
+	suffix = append(suffix,
+		"gmail.com",
+		"hotmail.com",
+		"yahoo.com",
+		"msn.com",
+		"aol.com")
+	net := suffix[rand.Intn(len(suffix))]
+	return net
 }
 
 func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
@@ -50,7 +57,7 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 	for i := range ListOfUsers {
 		ListOfUsers[i] = User{
 			UserID: i,
-			Emails: MakeRandomEmails(NumOfEmails),
+			Email:  MakeRandomEmails(NumOfEmails),
 		}
 	}
 	return ListOfUsers
@@ -58,15 +65,15 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 
 // **************
 
-// *** Structs *** 
+// *** Structs ***
 
 type User struct {
-	UserID int 
-	Emails []string 
+	UserID int
+	Email  []string
 }
 
 type Payload struct {
-	UserData User 
+	UserData User
 }
 
 // **************
@@ -74,29 +81,29 @@ type Payload struct {
 func main() {
 
 	numEmails := 10
-	userID := 5
-	userEmails:= MakeRandomEmails(numEmails)
-
-	d := User{userID, userEmails}
-	p := Payload{d}
+	numUsers := 5
+	// MakeRandomEmails(numEmails)
+	p := MakeRandomUsers(numUsers, numEmails)
 
 	userJSON, err := json.MarshalIndent(p, "", "  ")
-	req, err := http.NewRequest("GET", "http://localhost:8081/retrieve", bytes.NewBuffer(userJSON))
-
+	//8082 server
+	req, err := http.NewRequest("GET", "http://localhost:8082/retrieve", bytes.NewBuffer(userJSON))
+	fmt.Println(req, err)
 	req.Header.Set("Content-Type", "application/json")
 
-	// *** Server sends information back to Client *** 
+	// *** Server sends information back to Client ***
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	
+	// fmt.Println(resp)
 	if err != nil {
 		panic(err)
 	}
 
 	// Print the response being sent to the client
-	// body, err := ioutil.ReadAll(resp.Body)
-	// fmt.Println("Response: ", string(body))
-	
+	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Println("Response: ", string(body))
+	// fmt.Println(body)
+
 	resp.Body.Close()
 }

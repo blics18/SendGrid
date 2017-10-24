@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"log"
+	"net/http"
 )
 
-// *** Structs *** 
+// *** Structs ***
 
 type User struct {
-	UserID int 
-	Emails []string 
+	UserID int
+	Email  []string
 }
 
 type Payload struct {
-	UserData User 
+	UserData []User
 }
 
 // **************
@@ -37,30 +37,33 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 	// 	panic(err)
 	// }
 	// defer res.Body.Close()
-
 	body, err := ioutil.ReadAll(r.Body)
-	
+
 	if err != nil {
 		panic(err)
 	}
 
-	var p Payload
+	var p []User
 
 	err = json.Unmarshal(body, &p)
 	if err != nil {
 		panic(err)
+		fmt.Println(body)
 	}
 
-	fmt.Println("User ID: ", p.UserData.UserID)
-	fmt.Println("User Emails: ", p.UserData.Emails)
+	// Make a loop here later
+	for i := 0; i < len(p); i++ {
+		fmt.Println("User ID: ", p[i].UserID)
+		fmt.Println("User Email: ", p[i].Email)
+	}
 
 	// *** Can write back to Client here if we want
-
 	defer r.Body.Close()
 }
 
 func main() {
-	url := ":8081"
+	//I have mine on 8082 because my 8081 Server wouldn't shut down
+	url := ":8082"
 	http.HandleFunc("/retrieve", retrieve)
 	log.Fatal(http.ListenAndServe(url, nil))
 }

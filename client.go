@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"math/rand"
+	"net/http"
 	"time"
-	"bytes"
 )
 
 // *** Randomly Generate Data ***
@@ -33,8 +33,8 @@ func MakeRandomEmail() string {
 	return email
 }
 
-func MakeRandomEmails(n int) []string {
-	email_list := make([]string, n)
+func MakeRandomEmails(listLength int) []string {
+	email_list := make([]string, listLength)
 	for i := range email_list {
 		email_list[i] = MakeRandomEmail()
 	}
@@ -58,26 +58,28 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 
 // **************
 
-// *** Structs *** 
+// *** Structs ***
 
 type User struct {
-	UserID int 
-	Emails []string 
+	UserID int
+	Emails []string
 }
 
 type Payload struct {
-	UserData User 
+	UserData []User
 }
 
 // **************
 
 func main() {
-
+	numUsers := 20
 	numEmails := 10
-	userID := 5
-	userEmails:= MakeRandomEmails(numEmails)
+	//	userID := 5
+	//	userEmails := MakeRandomEmails(numEmails)
 
-	d := User{userID, userEmails}
+	userList := MakeRandomUsers(numUsers, numEmails)
+
+	d := userList
 	p := Payload{d}
 
 	userJSON, err := json.MarshalIndent(p, "", "  ")
@@ -85,11 +87,11 @@ func main() {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// *** Server sends information back to Client *** 
+	// *** Server sends information back to Client ***
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	
+
 	if err != nil {
 		panic(err)
 	}
@@ -97,6 +99,6 @@ func main() {
 	// Print the response being sent to the client
 	// body, err := ioutil.ReadAll(resp.Body)
 	// fmt.Println("Response: ", string(body))
-	
+
 	resp.Body.Close()
 }

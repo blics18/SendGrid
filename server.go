@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"log"
+	"net/http"
 )
 
-// *** Structs *** 
+// *** Structs ***
 
 type User struct {
-	UserID int 
-	Emails []string 
+	UserID int
+	Emails []string
 }
 
 type Payload struct {
-	UserData User 
+	UserData []User
 }
 
 // **************
@@ -39,7 +39,7 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 	// defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(r.Body)
-	
+
 	if err != nil {
 		panic(err)
 	}
@@ -51,8 +51,8 @@ func retrieve(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Println("User ID: ", p.UserData.UserID)
-	fmt.Println("User Emails: ", p.UserData.Emails)
+	fmt.Println("User List: ", p.UserData)
+	//	fmt.Println("User Emails: ", p.UserData.Emails)
 
 	// *** Can write back to Client here if we want
 

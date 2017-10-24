@@ -72,10 +72,6 @@ type User struct {
 	Email  []string
 }
 
-type Payload struct {
-	UserData User
-}
-
 // **************
 
 func main() {

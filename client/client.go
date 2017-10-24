@@ -85,7 +85,7 @@ func main() {
 	if err != nil {
 		panic(err)
    	}
-	//8082 server
+	
 	req, err := http.NewRequest("GET", "http://localhost:8082/retrieve", bytes.NewBuffer(userJSON))
 	if err != nil {
 		panic(err)

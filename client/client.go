@@ -86,8 +86,14 @@ func main() {
 	p := MakeRandomUsers(numUsers, numEmails)
 
 	userJSON, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		panic(err)
+   	}
 	//8082 server
 	req, err := http.NewRequest("GET", "http://localhost:8082/retrieve", bytes.NewBuffer(userJSON))
+	if err != nil {
+		panic(err)
+   	}
 	fmt.Println(req, err)
 	req.Header.Set("Content-Type", "application/json")
 

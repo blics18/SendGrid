@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// *** Randomly Generate Data ***
+// *** RANDOMLY GENERATE DATA ***
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -63,22 +63,18 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 	return ListOfUsers
 }
 
-// **************
-
-// *** Structs ***
+// *** STRUCTS ***
 
 type User struct {
 	UserID int
 	Email  []string
 }
 
-// **************
 
 func main() {
 
 	numEmails := 10
 	numUsers := 5
-	// MakeRandomEmails(numEmails)
 	p := MakeRandomUsers(numUsers, numEmails)
 
 	userJSON, err := json.MarshalIndent(p, "", "  ")
@@ -86,26 +82,24 @@ func main() {
 		panic(err)
    	}
 	
-	req, err := http.NewRequest("GET", "http://localhost:8082/retrieve", bytes.NewBuffer(userJSON))
+	req, err := http.NewRequest("GET", "http://localhost:8082/populateBF", bytes.NewBuffer(userJSON))
 	if err != nil {
 		panic(err)
    	}
-	fmt.Println(req, err)
+	
 	req.Header.Set("Content-Type", "application/json")
 
 	// *** Server sends information back to Client ***
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	// fmt.Println(resp)
+
 	if err != nil {
 		panic(err)
 	}
 
-	// Print the response being sent to the client
 	body, err := ioutil.ReadAll(resp.Body)
 	fmt.Println("Response: ", string(body))
-	// fmt.Println(body)
 
 	resp.Body.Close()
 }

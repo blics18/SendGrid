@@ -8,8 +8,6 @@ Informatics 117 Team Optimize Prime
 - Jose Gomez
 - Sheila Truong
 
-<br />
-
 #### Endpoint Documentation:
 
 To add data into the Bloom Filter: localhost:8082/populateBF

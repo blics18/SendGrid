@@ -1,14 +1,17 @@
-package main
+package utils
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
-	"net/http"
 	"time"
 )
+
+// *** STRUCTS ***
+
+type User struct {
+	UserID int
+	Email  []string
+}
 
 // *** RANDOMLY GENERATE DATA ***
 
@@ -56,22 +59,14 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 	ListOfUsers := make([]User, NumOfUsers)
 	for i := range ListOfUsers {
 		ListOfUsers[i] = User{
-			UserID: i,
+			UserID: i + 1,
 			Email:  MakeRandomEmails(NumOfEmails),
 		}
 	}
 	return ListOfUsers
 }
 
-// *** STRUCTS ***
-
-type User struct {
-	UserID int
-	Email  []string
-}
-
-
-func main() {
+/*func main() {
 
 	numEmails := 10
 	numUsers := 5
@@ -80,13 +75,13 @@ func main() {
 	userJSON, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		panic(err)
-   	}
-	
+	}
+
 	req, err := http.NewRequest("GET", "http://localhost:8082/populateBF", bytes.NewBuffer(userJSON))
 	if err != nil {
 		panic(err)
-   	}
-	
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	// *** Server sends information back to Client ***
@@ -102,4 +97,4 @@ func main() {
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
-}
+}*/

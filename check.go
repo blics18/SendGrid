@@ -13,7 +13,7 @@ import (
 
 func check(userID int, emails []string) {
 	user := User{
-		UserID: userID,
+		UserID: &userID,
 		Email:  emails,
 	}
 

@@ -52,7 +52,7 @@ func MakeRandomUsers(NumOfUsers int, NumOfEmails int) []User {
 	ListOfUsers := make([]User, NumOfUsers)
 	for i := range ListOfUsers {
 		ListOfUsers[i] = User{
-			UserID: i,
+			UserID: &i,
 			Email:  MakeRandomEmails(NumOfEmails),
 		}
 	}

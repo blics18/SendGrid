@@ -17,7 +17,7 @@ var bloomFilter *bloom.BloomFilter
 // *** STRUCTS ***
 
 type User struct {
-	UserID *int
+	UserID int
 	Email  []string
 }
 
@@ -80,8 +80,8 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Unable to parse json body"))
 		return
 	}
-
-	if p.UserID == nil {
+	fmt.Println(p.UserID)
+	if &p.UserID == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Need User ID"))
 		return

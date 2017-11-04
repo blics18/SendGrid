@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sheilatruong96/unsub"
+	"github.com/sheilatruong96/SendGrid"
 	"github.com/stretchr/testify/assert"
 	"github.com/willf/bloom"
 )
@@ -22,11 +22,12 @@ func TestBloomfilter(t *testing.T) {
 
 func TestUnsubCheck(t *testing.T) {
 	bloomFilter = createBloomFilter()
+	bloomFilter.Add([]byte("1|hello@gmail.com"))
 	userID := 1
 
 	user := unsub.User{
 		UserID: &userID,
-		Email:  []string{"hello@gmail.com", "hello2@aim.com"},
+		Email:  []string{"hello@gmail.com"},
 	}
 
 	userJSON, err := json.MarshalIndent(user, "", " ")

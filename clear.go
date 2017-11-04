@@ -19,7 +19,3 @@ func clear() {
 
 	resp.Body.Close()
 }
-
-/*func main() {
-	clear()
-}*/

@@ -10,7 +10,8 @@ Informatics 117 : Team Optimize Prime
 - Sheila Truong
 
 ## Installation
-go get -u github.com/willf/bloom
+- go get -u github.com/willf/bloom --> Get Bloom Filter files
+- go get github.com/stretchr/testify --> Get go's testing package in order to run tests on Bloom Filter
 
 ## Endpoints
 
@@ -24,5 +25,11 @@ go get -u github.com/willf/bloom
 - clear.go: Clears the Bloom Filter by accessing the endpoint localhost:8082/clearBF.
 - check.go: Passes userid and list of emails to localhost:8082/checkBF to check if they are in the Bloom Filter. 
 - server.go: Retreives JSON data, parses, and populates BF with it.
+- server_test.go: Unit testing
 
 
+## How to test:
+
+  1. Make sure all installation files are present (see "Installation")
+  2. Change into directory of server_test.go
+  3. In the terminal, type "go test"

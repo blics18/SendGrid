@@ -6,11 +6,6 @@ import (
 	"net/http"
 )
 
-/*type User struct {
-	UserID int
-	Email  []string
-}*/
-
 func check(userID int, emails []string) {
 	user := User{
 		UserID: &userID,
@@ -39,8 +34,3 @@ func check(userID int, emails []string) {
 
 	resp.Body.Close()
 }
-
-/*func main() {
-	b := []string{"OYTAEvdVTc@hotmail.com", "hi@gmail.com"}
-	check(0, b)
-}*/

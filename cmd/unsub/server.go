@@ -92,7 +92,7 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
 	for i := 0; i < len(p.Email); i++ {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"/SendGrid"
+	"github.com/blics18/SendGrid"
 	"github.com/stretchr/testify/assert"
 	"github.com/willf/bloom"
 )

@@ -12,6 +12,7 @@ Informatics 117 : Team Optimize Prime
 ## Installation
 - go get -u github.com/willf/bloom --> Get Bloom Filter files
 - go get github.com/stretchr/testify --> Get go's testing package in order to run tests on Bloom Filter
+- go get -u github.com/go-sql-driver/mysql --> Get go's mySQL driver
 
 ## Endpoints
 

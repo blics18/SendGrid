@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"github.com/willf/bloom"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // *** GLOBAL VARIABLES ***
@@ -29,7 +31,8 @@ func createBloomFilter() *bloom.BloomFilter {
 func populateBF(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not read the body of the request"))
 	}
 
 	defer r.Body.Close()
@@ -66,7 +69,8 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not read the body of the request"))
 	}
 
 	defer r.Body.Close()
@@ -92,21 +96,48 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Success"))
-
 	for i := 0; i < len(p.Email); i++ {
 
 		if bloomFilter.Test([]byte(fmt.Sprintf("%d|%s", p.UserID, p.Email[i]))) {
-			fmt.Print(p.Email[i])
-			fmt.Println(" is in the bloom filter.")
+			w.Write([]byte(p.Email[i] + " is in the bloom filter"))
+			if (crossCheck(p.UserID, p.Email[i])){
+				fmt.Println(p.Email[i] + " is in the database")
+			}else{
+				fmt.Println(p.Email[i] + " is not in the database")
+			}
+
 		} else {
-			fmt.Println("NO")
+			w.Write([]byte(p.Email[i] + " is not in the bloom filter"))
 		}
 	}
 
 }
 
+func crossCheck(UserID int, Email string) bool{
+	db, err := sql.Open("mysql",
+		"root:root123@tcp(localhost:3306)/UserStructs")
+	if err != nil {
+		fmt.Printf("Failed to get handle\n")
+		db.Close()
+	}
+	defer db.Close()
+
+	//Validate DSN data
+	err = db.Ping()
+	if err != nil {
+		fmt.Printf("Unable to make connection\n")
+		db.Close()
+	}
+	const numTables int = 5
+	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", UserID%numTables, UserID, Email)
+	rows, err := db.Query(stmt)
+	if err != nil{
+		fmt.Printf("Error from Database Connection")
+		return false
+	}
+	return rows.Next()
+	
+}
 func clearBF(w http.ResponseWriter, r *http.Request) {
 	bloomFilter.ClearAll()
 

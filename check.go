@@ -1,4 +1,4 @@
-package unsub
+package SendGrid
 
 import (
 	"bytes"

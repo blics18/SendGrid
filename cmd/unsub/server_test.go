@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/json"
 	"net/http"
@@ -20,13 +21,15 @@ func TestBloomfilter(t *testing.T) {
 }
 
 func TestUnsubCheck(t *testing.T) {
+	userIDEmail := "1|eFeOnJkMqw@aol.com"
+	email := "eFeOnJkMqw@aol.com"
 	bloomFilter = createBloomFilter()
-	bloomFilter.Add([]byte("1|hello@gmail.com"))
+	bloomFilter.Add([]byte(userIDEmail))
 	userID := 1
 
 	user := unsub.User{
 		UserID: &userID,
-		Email:  []string{"hello@gmail.com"},
+		Email:  []string{email},
 	}
 
 	userJSON, err := json.MarshalIndent(user, "", " ")
@@ -46,7 +49,7 @@ func TestUnsubCheck(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := `Success`
+	expected := fmt.Sprintf("%s is in the bloom filter", email)
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)

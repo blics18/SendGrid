@@ -1,7 +1,7 @@
 package main
 
 import (
-	"SendGrid/utils"
+	"github.com/blics18/SendGrid/utils"
 	"database/sql"
 	"fmt"
 
@@ -15,7 +15,7 @@ func main() {
 	numUsers := 10
 	p := utils.MakeRandomUsers(numUsers, numEmails)
 	db, err := sql.Open("mysql",
-		"jose:gomez@tcp(127.0.0.1:3306)/UserStructs")
+		"root:root123@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
 		db.Close()

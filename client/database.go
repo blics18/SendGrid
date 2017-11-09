@@ -1,7 +1,6 @@
-package main
+package client
 
 import (
-	"github.com/blics18/SendGrid/utils"
 	"database/sql"
 	"fmt"
 
@@ -10,12 +9,12 @@ import (
 
 const numTables int = 5
 
-func main() {
+func PopulateDB() {
 	numEmails := 100
 	numUsers := 10
-	p := utils.MakeRandomUsers(numUsers, numEmails)
+	p := MakeRandomUsers(numUsers, numEmails)
 	db, err := sql.Open("mysql",
-		"root:root123@tcp(localhost:3306)/UserStructs")
+		"root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
 		db.Close()
@@ -25,7 +24,7 @@ func main() {
 	//Validate DSN data
 	err = db.Ping()
 	if err != nil {
-		fmt.Printf("Unable to make connection\n")
+		fmt.Println(err)
 		db.Close()
 	}
 
@@ -41,27 +40,8 @@ func main() {
 	for i := 0; i < numUsers; i++ {
 		insert(p[i], db)
 	}
-	/*	//Print out our table
-		rows, err := db.Query("SELECT uid, email FROM Users")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			err := rows.Scan(&uid, &email)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println(uid, email)
-		}
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
 }
 
-//Should I make it return anything?
 func create_table(numTable int, db *sql.DB) error {
 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS User%02d (
 		id int NOT NULL AUTO_INCREMENT,
@@ -70,22 +50,14 @@ func create_table(numTable int, db *sql.DB) error {
 		DEFAULT CHARACTER SET utf8`, numTable)
 	_, err := db.Exec(stmt)
 	if err != nil {
-		fmt.Println("Failed to execute table")
+		fmt.Println(err)
 		return err
 	}
-	/*stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS User (uid int(255) NOT NULL,email varchar(255) DEFAULT NULL, PRIMARY KEY (uid)) DEFAULT CHARACTER SET utf8")
-	if err != nil {
-		fmt.Println("Failed to prepare")
-	}
-
-		lastId, err := res.LastInsertId()
-		fmt.Println(lastId)
-	*/
 	return nil
 }
 
-func insert(usr utils.User, db *sql.DB) error {
-	stmt := fmt.Sprintf("INSERT INTO User%02d(uid,email) VALUE(?, ?)", usr.UserID%numTables)
+func insert(usr User, db *sql.DB) error {
+	stmt := fmt.Sprintf("INSERT INTO User%02d(uid,email) VALUE(?, ?)", *(usr.UserID)%numTables) //take out *in usr.UserID jose
 	stmtHandle, err := db.Prepare(stmt)
 	if err != nil {
 		return err
@@ -93,7 +65,7 @@ func insert(usr utils.User, db *sql.DB) error {
 	for i := 0; i < len(usr.Email); i++ {
 		_, err := stmtHandle.Exec(usr.UserID, usr.Email[i])
 		if err != nil {
-			fmt.Println("Failed to execute insert")
+			fmt.Println(err)
 			return err
 		}
 	}

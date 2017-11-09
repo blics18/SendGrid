@@ -18,7 +18,7 @@ var bloomFilter *bloom.BloomFilter
 // *** STRUCTS ***
 
 type User struct {
-	UserID int
+	UserID *int
 	Email  []string
 }
 
@@ -51,8 +51,8 @@ func populateBF(w http.ResponseWriter, r *http.Request) {
 
 	for i := 0; i < len(p); i++ {
 		for j := 0; j < len(p[i].Email); j++ {
-			bloomFilter.Add([]byte(fmt.Sprintf("%d|%s", p[i].UserID, p[i].Email[j])))
-			fmt.Println(fmt.Sprintf("userID: %d", p[i].UserID))
+			bloomFilter.Add([]byte(fmt.Sprintf("%d|%s", *p[i].UserID, p[i].Email[j])))
+			fmt.Println(fmt.Sprintf("userID: %d", *p[i].UserID))
 			fmt.Println(fmt.Sprintf("Email: %s", p[i].Email[j]))
 		}
 	}
@@ -64,7 +64,6 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Need content to check"))
 		return
-
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -83,7 +82,7 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Unable to parse json body"))
 		return
 	}
-	fmt.Println(p.UserID)
+
 	if &p.UserID == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Need User ID"))
@@ -98,7 +97,7 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 
 	for i := 0; i < len(p.Email); i++ {
 
-		if bloomFilter.Test([]byte(fmt.Sprintf("%d|%s", p.UserID, p.Email[i]))) {
+		if bloomFilter.Test([]byte(fmt.Sprintf("%d|%s", *p.UserID, p.Email[i]))) {
 			w.Write([]byte(p.Email[i] + " is in the bloom filter"))
 			if (crossCheck(p.UserID, p.Email[i])){
 				fmt.Println(p.Email[i] + " is in the database")
@@ -113,9 +112,9 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func crossCheck(UserID int, Email string) bool{
+func crossCheck(UserID *int, Email string) bool{
 	db, err := sql.Open("mysql",
-		"root:root123@tcp(localhost:3306)/UserStructs")
+		"root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
 		db.Close()
@@ -129,7 +128,7 @@ func crossCheck(UserID int, Email string) bool{
 		db.Close()
 	}
 	const numTables int = 5
-	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", UserID%numTables, UserID, Email)
+	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", (*UserID)%numTables, *UserID, Email)
 	rows, err := db.Query(stmt)
 	if err != nil{
 		fmt.Printf("Error from Database Connection")

@@ -20,7 +20,7 @@ type User struct {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func Check(userID int, emails []string) {
+func Check(userID int, emails []string) error {
 	user := User{
 		UserID: &userID,
 		Email:  emails,
@@ -29,12 +29,12 @@ func Check(userID int, emails []string) {
 	userJSON, err := json.MarshalIndent(user, "", " ")
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 	req, err := http.NewRequest("GET", "http://localhost:8082/checkBF", bytes.NewBuffer(userJSON))
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -43,19 +43,25 @@ func Check(userID int, emails []string) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return err
+	}
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
+
+	return nil
 }
 
-func Clear() {
+func Clear() error {
 	req, err := http.NewRequest("GET", "http://localhost:8082/clearBF", nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -64,13 +70,22 @@ func Clear() {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return err
+	}
+	fmt.Println("Response: ", string(body))
+
 	resp.Body.Close()
+
+	return nil
 }
 
-func Populate() {
+func Populate() error {
 
 	numEmails := 10
 	numUsers := 5
@@ -78,12 +93,12 @@ func Populate() {
 
 	userJSON, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	req, err := http.NewRequest("GET", "http://localhost:8082/populateBF", bytes.NewBuffer(userJSON))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -92,13 +107,20 @@ func Populate() {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
+
+	return nil
 }
 
 func init() {

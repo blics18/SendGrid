@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-
 	"strconv"
 
 	"github.com/blics18/SendGrid/client"
@@ -15,24 +14,17 @@ import (
 	"github.com/willf/bloom"
 )
 
-// *** GLOBAL VARIABLES ***
-
-var bloomFilter *bloom.BloomFilter
-
-// *** STRUCTS ***
-
-// type User struct {
-// 	UserID *int
-// 	Email  []string
-// }
-
-func createBloomFilter() *bloom.BloomFilter {
-	size := uint(1000)
-	filter := bloom.New(20*size, 5)
-	return filter
+type bloomFilter struct {
+	filter *bloom.BloomFilter
 }
 
-func populateBF(w http.ResponseWriter, r *http.Request) {
+func createBloomFilter() *bloomFilter {
+	return &bloomFilter{
+		filter: bloom.New(20*uint(1000), 5),
+	}
+}
+
+func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		w.Write([]byte("Could not read the body of the request"))
 	}
@@ -57,11 +49,9 @@ func populateBF(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
-	//	for i := 0; i < len(p); i++ {
-	//		for j := 0; j < len(p[i].Email); j++ {
 	for _, user := range users {
 		for _, email := range user.Email {
-			bloomFilter.Add([]byte(fmt.Sprintf("%d|%s", *user.UserID, email)))
+			bf.filter.Add([]byte(fmt.Sprintf("%d|%s", *user.UserID, email)))
 			fmt.Println(fmt.Sprintf("userID: %d", *user.UserID))
 			fmt.Println(fmt.Sprintf("Email: %s", email))
 		}
@@ -69,7 +59,7 @@ func populateBF(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func checkBF(w http.ResponseWriter, r *http.Request) {
+func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Need content to check"))
@@ -105,9 +95,8 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//	for i := 0; i < len(user.Email); i++ {
 	for _, email := range user.Email {
-		if bloomFilter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
+		if bf.filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
 			w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			if crossCheck(user.UserID, email) {
 				w.Write([]byte(email + " is in the database"))
@@ -121,19 +110,16 @@ func checkBF(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(email + " is not in the bloom filter"))
 		}
 	}
-
 }
 
 func crossCheck(UserID *int, Email string) bool {
-	db, err := sql.Open("mysql",
-		"root:SendGrid@tcp(localhost:3306)/UserStructs")
+	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
 		db.Close()
 	}
 	defer db.Close()
 
-	//Validate DSN data
 	err = db.Ping()
 	if err != nil {
 		fmt.Printf("Unable to make connection\n")
@@ -149,17 +135,17 @@ func crossCheck(UserID *int, Email string) bool {
 	return rows.Next()
 
 }
-func clearBF(w http.ResponseWriter, r *http.Request) {
-	bloomFilter.ClearAll()
+func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
+	bf.filter.ClearAll()
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully Cleared Bloom Filter"))
-
 }
 
 func main() {
 	port := ":8082"
-	bloomFilter = createBloomFilter()
-	http.HandleFunc("/populateBF", populateBF)
-	http.HandleFunc("/checkBF", checkBF)
-	http.HandleFunc("/clearBF", clearBF)
+	bf := createBloomFilter()
+	http.HandleFunc("/populateBF", bf.populateBF)
+	http.HandleFunc("/checkBF", bf.checkBF)
+	http.HandleFunc("/clearBF", bf.clearBF)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

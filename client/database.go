@@ -20,6 +20,7 @@ func createDatabase(dbName string, db *sql.DB) error {
 	return nil
 }
 */
+
 func createTable(numTable int, db *sql.DB) error {
 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS User%02d (
 		id int NOT NULL AUTO_INCREMENT,

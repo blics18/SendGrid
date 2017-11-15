@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// *** STRUCTS ***
 type User struct {
 	UserID *int
 	Email  []string
@@ -84,12 +84,67 @@ func Clear() error {
 }
 
 func Populate() error {
+	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
+	if err != nil {
+		fmt.Printf("Failed to get handle\n")
+		db.Close()
+	}
 
-	numEmails := 10
-	numUsers := 5
-	p := MakeRandomUsers(numUsers, numEmails)
+	err = db.Ping()
+	if err != nil {
+		fmt.Println(err)
+		db.Close()
+	}
 
-	userJSON, err := json.MarshalIndent(p, "", "  ")
+	var tableNames []string
+	userMap := make(map[*int][]string)
+
+	stmt := fmt.Sprintf("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA='UserStructs'")
+	rows, err := db.Query(stmt)
+	if err != nil {
+		fmt.Printf("Error from Database Connection")
+	}
+
+	for rows.Next() {
+		var tableName string
+		rows.Scan(&tableName)
+		tableNames = append(tableNames, tableName)
+	}
+
+	for _, tableName := range tableNames {
+		stmt := fmt.Sprintf("SELECT uid, email FROM UserStructs.%s", tableName)
+		rows, err := db.Query(stmt)
+		if err != nil {
+			fmt.Printf("Error from Database Connection")
+		}
+
+		for rows.Next() {
+			var id int
+			var email string
+			
+			rows.Scan(&id, &email)
+			_, exists := userMap[&id]
+			if exists {
+				userMap[&id] = append(userMap[&id], email)
+			} else {
+				userMap[&id] = []string{email}
+			}
+		}
+	}
+
+	userList := make([]User, len(userMap))
+	index := 0
+
+	for key, value := range userMap {
+		userList[index] = User{
+			UserID: key,
+			Email:  value,
+		}
+		index++
+	}
+
+	userJSON, err := json.MarshalIndent(userList, "", "  ")
+
 	if err != nil {
 		return err
 	}

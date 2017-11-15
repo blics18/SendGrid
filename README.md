@@ -22,11 +22,17 @@ Informatics 117 : Team Optimize Prime
 
 ## Files:
 
-- populate.go: Generates random user ID and emails, packages as JSON, and sends to localhost:8082/populateBF.
-- clear.go: Clears the Bloom Filter by accessing the endpoint localhost:8082/clearBF.
-- check.go: Passes userid and list of emails to localhost:8082/checkBF to check if they are in the Bloom Filter. 
-- server.go: Retreives JSON data, parses, and populates BF with it.
-- server_test.go: Unit testing
+- client.go: 
+  - Populate() - populates the bloom filter with data from MySQL and package it as a JSON, and sends to localhost:8082/populateBF.
+  - Clear() - clears the bloom filter by accessing the endpoint localhost:8082/clearBF.
+  - Check() - passes userid and list of emails to localhost:8082/checkBF to check if they are in the bloom filter. 
+- database.go: creates and inserts randomly generated data into MySQL database. 
+- generateEmail.go: generates random userIDs and emails.
+- server.go: 
+  - populateBF() - retreives JSON data, parses, and populates bloom filter with it.
+  - checkBF() - retreives JSON data, parses, and checks the data against the bloom filter and cross checks against MySQL if data is in the bloom filter. 
+  - clearBF() - clears the bloom filter. 
+- server_test.go: unit testing
 
 
 ## How to test:

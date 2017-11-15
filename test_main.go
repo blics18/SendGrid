@@ -1,20 +1,15 @@
 package main
 
 import (
-	"github.com/sheilatruong96/SendGrid/client"
-	"fmt"
+	"github.com/blics18/SendGrid/client"
 )
 
 func main() {
-	fmt.Println("Hello World")
 
-	//client.PopulateDB()
-	 // client.Populate()
-	 // client.PopulateDB()
+	//	client.PopulateDB()
+	//	client.Populate()
 
-	b := []string{"DxYYwQUtLZ@yahoo.com"}
+	b := []string{"PgRfZjKhPx@msn.com"}
 	client.Check(5, b)
 
-
-	fmt.Println("Did it work?")
 }

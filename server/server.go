@@ -1,17 +1,18 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"strconv"
+	"net/http"
+	"encoding/json"
+	"database/sql"
 
+	"github.com/willf/bloom"
 	"github.com/blics18/SendGrid/client"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/willf/bloom"
+	
 )
 
 type bloomFilter struct {
@@ -56,7 +57,6 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(fmt.Sprintf("Email: %s", email))
 		}
 	}
-
 }
 
 func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +105,6 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(email + " is not in the database"))
 				fmt.Println(email + " is not in the database")
 			}
-
 		} else {
 			w.Write([]byte(email + " is not in the bloom filter"))
 		}
@@ -115,26 +114,30 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 func crossCheck(UserID *int, Email string) bool {
 	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
-		fmt.Printf("Failed to get handle\n")
+		fmt.Println("Failed to get handle")
 		db.Close()
 	}
+	
 	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
-		fmt.Printf("Unable to make connection\n")
+		fmt.Println("Unable to make connection")
 		db.Close()
 	}
+	
 	const numTables int = 5
+
 	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", (*UserID)%numTables, *UserID, Email)
 	rows, err := db.Query(stmt)
 	if err != nil {
 		fmt.Printf("Error from Database Connection")
 		return false
 	}
+	
 	return rows.Next()
-
 }
+
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	bf.filter.ClearAll()
 	w.WriteHeader(http.StatusOK)

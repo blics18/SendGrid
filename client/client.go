@@ -1,13 +1,13 @@
 package client
 
 import (
-	"bytes"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"bytes"
 	"net/http"
-
+	"encoding/json"
+	"database/sql"
+	
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -16,8 +16,6 @@ type User struct {
 	Email  []string
 }
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
 func Check(userID int, emails []string) error {
 	user := User{
 		UserID: &userID,
@@ -25,12 +23,11 @@ func Check(userID int, emails []string) error {
 	}
 
 	userJSON, err := json.MarshalIndent(user, "", " ")
-
 	if err != nil {
 		return err
 	}
+	
 	req, err := http.NewRequest("GET", "http://localhost:8082/checkBF", bytes.NewBuffer(userJSON))
-
 	if err != nil {
 		return err
 	}
@@ -38,21 +35,20 @@ func Check(userID int, emails []string) error {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
+	
 	resp, err := client.Do(req)
-
 	if err != nil {
 		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	if err != nil {
 		return err
 	}
+	
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
-
 	return nil
 }
 
@@ -65,21 +61,20 @@ func Clear() error {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
 
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	if err != nil {
 		return err
 	}
-	fmt.Println("Response: ", string(body))
+
+	fmt.Println("Response: ", string(body)) 
 
 	resp.Body.Close()
-
 	return nil
 }
 
@@ -96,21 +91,23 @@ func Populate() error {
 		db.Close()
 	}
 
-	var tableNames []string
-	userMap := make(map[*int][]string)
+	var tableNames []string // tableNames is a list of tables. Example: [User00, User01, User03, ...] 
+	userMap := make(map[*int][]string) // userMap is a map that consists of User ID's as keys, with their value as a list of emails. //Ex: [5: ["jim@yahoo.com", "trevor@aol.com"]
 
 	stmt := fmt.Sprintf("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA='UserStructs'")
 	rows, err := db.Query(stmt)
 	if err != nil {
-		fmt.Printf("Error from Database Connection")
+		fmt.Println("Error from Database Connection")
 	}
 
-	for rows.Next() {
+	// populate tableNames
+	for rows.Next() { 
 		var tableName string
 		rows.Scan(&tableName)
 		tableNames = append(tableNames, tableName)
 	}
 
+	// build userMap
 	for _, tableName := range tableNames {
 		stmt := fmt.Sprintf("SELECT uid, email FROM UserStructs.%s", tableName)
 		rows, err := db.Query(stmt)
@@ -121,9 +118,10 @@ func Populate() error {
 		for rows.Next() {
 			var id int
 			var email string
-			
 			rows.Scan(&id, &email)
+
 			_, exists := userMap[&id]
+			
 			if exists {
 				userMap[&id] = append(userMap[&id], email)
 			} else {
@@ -132,9 +130,10 @@ func Populate() error {
 		}
 	}
 
-	userList := make([]User, len(userMap))
+	userList := make([]User, len(userMap)) // userList is a list of User structs: [User, User, User]
 	index := 0
 
+	// build userList from the values in userMap
 	for key, value := range userMap {
 		userList[index] = User{
 			UserID: key,
@@ -144,7 +143,6 @@ func Populate() error {
 	}
 
 	userJSON, err := json.MarshalIndent(userList, "", "  ")
-
 	if err != nil {
 		return err
 	}
@@ -158,13 +156,11 @@ func Populate() error {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-
 	if err != nil {
 		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	if err != nil {
 		return err
 	}
@@ -172,6 +168,5 @@ func Populate() error {
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
-
 	return nil
 }

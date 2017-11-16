@@ -12,7 +12,7 @@ Informatics 117 : Team Optimize Prime
 ## Installation
 ```
 $ go get -u github.com/govend/govend                 # make sure govend is installed
-$ git clone https://github.com/blics18/SendGrid.git  # grab all the code Sarah pushed
+$ git clone https://github.com/blics18/SendGrid.git  # grab all the code from github
 $ govend -v                                          # download all the dependencies in the vendor.yml file
 ```
 

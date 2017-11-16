@@ -10,9 +10,11 @@ Informatics 117 : Team Optimize Prime
 - Sheila Truong
 
 ## Installation
-- go get -u github.com/willf/bloom --> Get Bloom Filter files
-- go get github.com/stretchr/testify --> Get go's testing package in order to run tests on Bloom Filter
-- go get -u github.com/go-sql-driver/mysql --> Get go's mySQL driver
+```
+$ go get -u github.com/govend/govend                 # make sure govend is installed
+$ git clone https://github.com/blics18/SendGrid.git  # grab all the code Sarah pushed
+$ govend -v                                          # download all the dependencies in the vendor.yml file
+```
 
 ## Endpoints
 
@@ -23,20 +25,18 @@ Informatics 117 : Team Optimize Prime
 ## Files:
 
 - client.go: 
-  - Populate() - populates the bloom filter with data from MySQL and package it as a JSON, and sends to localhost:8082/populateBF.
-  - Clear() - clears the bloom filter by accessing the endpoint localhost:8082/clearBF.
-  - Check() - passes userid and list of emails to localhost:8082/checkBF to check if they are in the bloom filter. 
-- database.go: creates and inserts randomly generated data into MySQL database. 
-- generateEmail.go: generates random userIDs and emails.
+  - Populate() - grabs data from MySQL, packages it as a JSON, and sends it to localhost:8082/populateBF.
+  - Clear() - calls clearBF endpoint (localhost:8082/clearBF) to clear the bloom filter. 
+  - Check() - passes userid and list of emails to localhost:8082/checkBF; calls checkBF to check if an input exists in the bloom filter.
+- database.go: creates and inserts randomly-generated data into the MySQL database.
+- generateEmail.go (helper file): generates random userIDs and emails.
 - server.go: 
-  - populateBF() - retreives JSON data, parses, and populates bloom filter with it.
-  - checkBF() - retreives JSON data, parses, and checks the data against the bloom filter and cross checks against MySQL if data is in the bloom filter. 
+  - populateBF() - retreives the JSON data, parses it, and populates the bloom filter with it.
+  - checkBF() - retreives the JSON data, parses it, and checks the data against the bloom filter. Also cross checks against the MySQL database if the data exists within the bloom filter. 
   - clearBF() - clears the bloom filter. 
 - server_test.go: unit testing
 
-
 ## How to test:
 
-  1. Make sure all installation files are present (see "Installation")
-  2. Change into directory of server_test.go
-  3. In the terminal, type "go test"
+  1. Change into directory of server_test.go
+  2. In the terminal, type "go test"

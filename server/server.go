@@ -135,13 +135,48 @@ func crossCheck(UserID *int, Email string) bool {
 		return false
 	}
 	
-	return rows.Next()
+	ret := rows.Next()
+	rows.Close()
+	return ret
 }
 
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	bf.filter.ClearAll()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Successfully Cleared Bloom Filter"))
+	//w.Write([]byte("Successfully Cleared Bloom Filter"))
+}
+
+func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+	healthStruct := &client.HealthStatus{
+		AppName: "Bloom Filter",
+		AppVersion: "1.0.0",
+		HealthCheckVersion: "1.0.0",
+		Port: "8082",
+	}
+	
+	healthStruct.Results.ServerStatus.OK = true
+	healthStruct.Results.ConnectedToDB.OK = true
+	
+	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
+	if err != nil {
+		healthStruct.Results.ConnectedToDB.OK = false
+		db.Close()
+	}
+
+	err = db.Ping()
+	if err != nil {
+		healthStruct.Results.ConnectedToDB.OK = false
+		db.Close()
+	}
+	
+	healthJSON, err := json.MarshalIndent(healthStruct, "", " ")
+	if err != nil {
+		return
+	}
+	
+	w.Write(healthJSON)
 }
 
 func main() {
@@ -150,5 +185,6 @@ func main() {
 	http.HandleFunc("/populateBF", bf.populateBF)
 	http.HandleFunc("/checkBF", bf.checkBF)
 	http.HandleFunc("/clearBF", bf.clearBF)
+	http.HandleFunc("/healthBF", bf.healthBF)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

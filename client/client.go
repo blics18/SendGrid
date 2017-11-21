@@ -16,6 +16,21 @@ type User struct {
 	Email  []string
 }
 
+type HealthStatus struct {
+	AppName string
+	AppVersion string
+	HealthCheckVersion string
+	Port string
+	Results struct {
+		ServerStatus struct {
+			OK bool
+		}
+		ConnectedToDB struct {
+			OK bool
+		}
+	}
+}
+
 func Check(userID int, emails []string) error {
 	user := User{
 		UserID: &userID,
@@ -107,6 +122,8 @@ func Populate() error {
 		tableNames = append(tableNames, tableName)
 	}
 
+	rows.Close()
+
 	// build userMap
 	for _, tableName := range tableNames {
 		stmt := fmt.Sprintf("SELECT uid, email FROM UserStructs.%s", tableName)
@@ -128,6 +145,8 @@ func Populate() error {
 				userMap[&id] = []string{email}
 			}
 		}
+
+		rows.Close()
 	}
 
 	userList := make([]User, len(userMap)) // userList is a list of User structs: [User, User, User]
@@ -167,6 +186,37 @@ func Populate() error {
 
 	fmt.Println("Response: ", string(body))
 
+	resp.Body.Close()
+	return nil
+}
+
+func HealthCheck() error {	
+	req, err := http.NewRequest("GET", "http://localhost:8082/healthBF", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("StatusInternalServerError: Error Code 500")
+		return err
+	}
+
+	fmt.Println("Content-type: ", resp.Header["Content-Type"][0])
+	fmt.Println("Date: ", resp.Header["Date"][0]) 
+	fmt.Println("Protocol: ", resp.Proto, "\n")
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(body))
+	
 	resp.Body.Close()
 	return nil
 }

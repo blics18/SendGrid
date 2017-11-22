@@ -1,27 +1,26 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strconv"
 	"net/http"
-	"encoding/json"
-	"database/sql"
+	"strconv"
 
-	"github.com/willf/bloom"
 	"github.com/blics18/SendGrid/client"
 	_ "github.com/go-sql-driver/mysql"
-	
+	"github.com/willf/bloom"
 )
 
 type bloomFilter struct {
 	filter *bloom.BloomFilter
 }
 
-func createBloomFilter() *bloomFilter {
+func CreateBloomFilter(size int) *bloomFilter {
 	return &bloomFilter{
-		filter: bloom.New(20*uint(1000), 5),
+		filter: bloom.New(20*uint(size), 5),
 	}
 }
 
@@ -97,16 +96,19 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 
 	for _, email := range user.Email {
 		if bf.filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
-			w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
+			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			if crossCheck(user.UserID, email) {
-				w.Write([]byte(email + " is in the database"))
-				fmt.Println(email + " is in the database")
+				//w.Write([]byte(email + " is in the database"))
+				//fmt.Println(email + " is in the database")
+				w.Write([]byte("0"))
 			} else {
-				w.Write([]byte(email + " is not in the database"))
-				fmt.Println(email + " is not in the database")
+				//w.Write([]byte(email + " is not in the database"))
+				//fmt.Println(email + " is not in the database")
+				w.Write([]byte("1"))
 			}
 		} else {
-			w.Write([]byte(email + " is not in the bloom filter"))
+			//w.Write([]byte(email + " is not in the bloom filter"))
+			w.Write([]byte("0"))
 		}
 	}
 }
@@ -117,7 +119,7 @@ func crossCheck(UserID *int, Email string) bool {
 		fmt.Println("Failed to get handle")
 		db.Close()
 	}
-	
+
 	defer db.Close()
 
 	err = db.Ping()
@@ -125,7 +127,7 @@ func crossCheck(UserID *int, Email string) bool {
 		fmt.Println("Unable to make connection")
 		db.Close()
 	}
-	
+
 	const numTables int = 5
 
 	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", (*UserID)%numTables, *UserID, Email)
@@ -134,21 +136,57 @@ func crossCheck(UserID *int, Email string) bool {
 		fmt.Printf("Error from Database Connection")
 		return false
 	}
-	
-	return rows.Next()
+
+	ret := rows.Next()
+	rows.Close()
+	return ret
 }
 
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	bf.filter.ClearAll()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Successfully Cleared Bloom Filter"))
+	//w.Write([]byte("Successfully Cleared Bloom Filter"))
+}
+
+func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+	healthStruct := &client.HealthStatus{
+		AppName:            "Bloom Filter",
+		AppVersion:         "1.0.0",
+		HealthCheckVersion: "1.0.0",
+		Port:               "8082",
+	}
+
+	healthStruct.Results.ServerStatus.OK = true
+	healthStruct.Results.ConnectedToDB.OK = true
+
+	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
+	if err != nil {
+		healthStruct.Results.ConnectedToDB.OK = false
+		db.Close()
+	}
+
+	err = db.Ping()
+	if err != nil {
+		healthStruct.Results.ConnectedToDB.OK = false
+		db.Close()
+	}
+
+	healthJSON, err := json.MarshalIndent(healthStruct, "", " ")
+	if err != nil {
+		return
+	}
+
+	w.Write(healthJSON)
 }
 
 func main() {
 	port := ":8082"
-	bf := createBloomFilter()
+	bf := CreateBloomFilter(1000)
 	http.HandleFunc("/populateBF", bf.populateBF)
 	http.HandleFunc("/checkBF", bf.checkBF)
 	http.HandleFunc("/clearBF", bf.clearBF)
+	http.HandleFunc("/healthBF", bf.healthBF)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

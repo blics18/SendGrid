@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const numTables int = 5
+//const numTables int = 5
 
 func createTable(numTable int, db *sql.DB) error {
 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS User%02d (
@@ -20,19 +20,19 @@ func createTable(numTable int, db *sql.DB) error {
 		fmt.Println(err)
 		return err
 	}
-	
+
 	return nil
 }
 
-func insertToTables(usr User, db *sql.DB) error {
+func insertToTables(numTables int, usr User, db *sql.DB) error {
 	stmt := fmt.Sprintf("INSERT INTO User%02d(uid,email) VALUE(?, ?)", *(usr.UserID)%numTables)
 	stmtHandle, err := db.Prepare(stmt)
 	if err != nil {
 		return err
 	}
-	
+
 	defer stmtHandle.Close()
-	
+
 	for i := 0; i < len(usr.Email); i++ {
 		_, err := stmtHandle.Exec(usr.UserID, usr.Email[i])
 		if err != nil {
@@ -40,17 +40,16 @@ func insertToTables(usr User, db *sql.DB) error {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
-func PopulateDB() *sql.DB {
-	//	dbName := "UserStructs"
-	numEmails := 100
-	numUsers := 10
-	
+func PopulateDB(numUsers int, numEmails int, numTables int) *sql.DB {
+	//numEmails := 100
+	//numUsers := 10
+
 	p := MakeRandomUsers(numUsers, numEmails)
-	
+
 	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
@@ -72,17 +71,17 @@ func PopulateDB() *sql.DB {
 	}
 
 	for i := 0; i < numUsers; i++ {
-		err := insertToTables(p[i], db)
+		err := insertToTables(numTables, p[i], db)
 		if err != nil {
 			fmt.Println(err)
 			db.Close()
 		}
 	}
-	
+
 	return db
 }
 
-func DropTables(db *sql.DB) error {
+func DropTables(numTables int, db *sql.DB) error {
 	for i := 0; i < numTables; i++ {
 		stmt := fmt.Sprintf("DROP TABLE User%02d", i)
 		_, err := db.Exec(stmt)

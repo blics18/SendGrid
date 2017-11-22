@@ -1,13 +1,13 @@
 package client
 
 import (
+	"bytes"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"bytes"
 	"net/http"
-	"encoding/json"
-	"database/sql"
-	
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -16,7 +16,22 @@ type User struct {
 	Email  []string
 }
 
-func Check(userID int, emails []string) error {
+type HealthStatus struct {
+	AppName            string
+	AppVersion         string
+	HealthCheckVersion string
+	Port               string
+	Results            struct {
+		ServerStatus struct {
+			OK bool
+		}
+		ConnectedToDB struct {
+			OK bool
+		}
+	}
+}
+
+func Check(userID int, emails []string) (error, []byte) {
 	user := User{
 		UserID: &userID,
 		Email:  emails,
@@ -24,32 +39,32 @@ func Check(userID int, emails []string) error {
 
 	userJSON, err := json.MarshalIndent(user, "", " ")
 	if err != nil {
-		return err
+		return err, []byte("0")
 	}
-	
+
 	req, err := http.NewRequest("GET", "http://localhost:8082/checkBF", bytes.NewBuffer(userJSON))
 	if err != nil {
-		return err
+		return err, []byte("0")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return err, []byte("0")
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return err, []byte("0")
 	}
-	
+
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
-	return nil
+	return nil, body
 }
 
 func Clear() error {
@@ -72,7 +87,7 @@ func Clear() error {
 		return err
 	}
 
-	fmt.Println("Response: ", string(body)) 
+	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
 	return nil
@@ -91,7 +106,7 @@ func Populate() error {
 		db.Close()
 	}
 
-	var tableNames []string // tableNames is a list of tables. Example: [User00, User01, User03, ...] 
+	var tableNames []string            // tableNames is a list of tables. Example: [User00, User01, User03, ...]
 	userMap := make(map[*int][]string) // userMap is a map that consists of User ID's as keys, with their value as a list of emails. //Ex: [5: ["jim@yahoo.com", "trevor@aol.com"]
 
 	stmt := fmt.Sprintf("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA='UserStructs'")
@@ -101,11 +116,13 @@ func Populate() error {
 	}
 
 	// populate tableNames
-	for rows.Next() { 
+	for rows.Next() {
 		var tableName string
 		rows.Scan(&tableName)
 		tableNames = append(tableNames, tableName)
 	}
+
+	rows.Close()
 
 	// build userMap
 	for _, tableName := range tableNames {
@@ -121,13 +138,15 @@ func Populate() error {
 			rows.Scan(&id, &email)
 
 			_, exists := userMap[&id]
-			
+
 			if exists {
 				userMap[&id] = append(userMap[&id], email)
 			} else {
 				userMap[&id] = []string{email}
 			}
 		}
+
+		rows.Close()
 	}
 
 	userList := make([]User, len(userMap)) // userList is a list of User structs: [User, User, User]
@@ -166,6 +185,38 @@ func Populate() error {
 	}
 
 	fmt.Println("Response: ", string(body))
+
+	resp.Body.Close()
+	db.Close()
+	return nil
+}
+
+func HealthCheck() error {
+	req, err := http.NewRequest("GET", "http://localhost:8082/healthBF", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("StatusInternalServerError: Error Code 500")
+		return err
+	}
+
+	fmt.Println("Content-type: ", resp.Header["Content-Type"][0])
+	fmt.Println("Date: ", resp.Header["Date"][0])
+	fmt.Println("Protocol: ", resp.Proto, "\n")
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(body))
 
 	resp.Body.Close()
 	return nil

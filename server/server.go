@@ -94,23 +94,36 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hitMissStruct := &client.HitMiss{
+		Hits:  0,
+		Total: 0,
+	}
+
 	for _, email := range user.Email {
 		if bf.filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
 			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			if crossCheck(user.UserID, email) {
 				//w.Write([]byte(email + " is in the database"))
 				//fmt.Println(email + " is in the database")
-				w.Write([]byte("0"))
+				hitMissStruct.Total += 1
 			} else {
 				//w.Write([]byte(email + " is not in the database"))
 				//fmt.Println(email + " is not in the database")
-				w.Write([]byte("1"))
+				hitMissStruct.Hits += 1
+				hitMissStruct.Total += 1
 			}
 		} else {
 			//w.Write([]byte(email + " is not in the bloom filter"))
-			w.Write([]byte("0"))
+			hitMissStruct.Total += 1
 		}
 	}
+
+	hitMissJSON, err := json.MarshalIndent(hitMissStruct, "", " ")
+	if err != nil {
+		return
+	}
+
+	w.Write(hitMissJSON)
 }
 
 func crossCheck(UserID *int, Email string) bool {

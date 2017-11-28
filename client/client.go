@@ -37,6 +37,7 @@ type HealthStatus struct {
 type HitMiss struct {
 	Hits  int
 	Total int
+	Suppressions []string
 }
 
 func Check(userID int, emails []string) (error, HitMiss) {

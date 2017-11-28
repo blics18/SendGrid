@@ -97,6 +97,7 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	hitMissStruct := &client.HitMiss{
 		Hits:  0,
 		Total: 0,
+		Suppressions: []string{},
 	}
 
 	for _, email := range user.Email {
@@ -105,6 +106,7 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 			if crossCheck(user.UserID, email) {
 				//w.Write([]byte(email + " is in the database"))
 				//fmt.Println(email + " is in the database")
+				hitMissStruct.Suppressions = append(hitMissStruct.Suppressions, email) 
 				hitMissStruct.Total += 1
 			} else {
 				//w.Write([]byte(email + " is not in the database"))

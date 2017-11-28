@@ -25,7 +25,7 @@ func TestUnsubCheck(t *testing.T) {
 	userID := 1
 	userIDEmail := "1|eFeOnJkMqw@aol.com"
 	email := "eFeOnJkMqw@aol.com"
-	bf := CreateBloomFilter(1000)
+	bf := NewBloomFilter(1000)
 	bf.filter.Add([]byte(userIDEmail))
 
 	user := client.User{
@@ -61,7 +61,7 @@ func TestUnsubClear(t *testing.T) {
 	userID := 3
 	userIDEmail := "3|hzSfMqs@aol.com"
 	email := "hzSfMqs@aol.com"
-	bf := CreateBloomFilter(1000)
+	bf := NewBloomFilter(1000)
 
 	bf.filter.Add([]byte(userIDEmail))
 

@@ -7,14 +7,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-//const numTables int = 5
-
-func createTable(numTable int, db *sql.DB) error {
+func createTable(numTables int, db *sql.DB) error {
 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS User%02d (
 		id int NOT NULL AUTO_INCREMENT,
 		uid int(255) NOT NULL,
 		email varchar(255) DEFAULT NULL, PRIMARY KEY (id)) 
-		DEFAULT CHARACTER SET utf8`, numTable)
+		DEFAULT CHARACTER SET utf8`, numTables)
 	_, err := db.Exec(stmt)
 	if err != nil {
 		fmt.Println(err)

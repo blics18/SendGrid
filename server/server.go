@@ -18,7 +18,7 @@ type bloomFilter struct {
 	filter *bloom.BloomFilter
 }
 
-func CreateBloomFilter(size int) *bloomFilter {
+func NewBloomFilter(size int) *bloomFilter {
 	return &bloomFilter{
 		filter: bloom.New(20*uint(size), 5),
 	}
@@ -103,7 +103,8 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	for _, email := range user.Email {
 		if bf.filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
 			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
-			if crossCheck(user.UserID, email) {
+			err, inDB := crossCheck(user.UserID, email)
+			if err == nil && inDB == true {
 				//w.Write([]byte(email + " is in the database"))
 				//fmt.Println(email + " is in the database")
 				hitMissStruct.Suppressions = append(hitMissStruct.Suppressions, email) 
@@ -128,11 +129,12 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	w.Write(hitMissJSON)
 }
 
-func crossCheck(UserID *int, Email string) bool {
+func crossCheck(UserID *int, Email string) (error, bool) {
 	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Println("Failed to get handle")
 		db.Close()
+		return err, false
 	}
 
 	defer db.Close()
@@ -141,20 +143,27 @@ func crossCheck(UserID *int, Email string) bool {
 	if err != nil {
 		fmt.Println("Unable to make connection")
 		db.Close()
+		return err, false
 	}
 
-	const numTables int = 5
-
-	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=%d AND email='%s'", (*UserID)%numTables, *UserID, Email)
-	rows, err := db.Query(stmt)
+	var numTables int
+	err = db.QueryRow("SELECT COUNT(*) AS count from information_schema.tables WHERE table_schema=?", "UserStructs").Scan(&numTables)
 	if err != nil {
 		fmt.Printf("Error from Database Connection")
-		return false
+		return err, false
+	}
+
+	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=? AND email=?", (*UserID)%numTables)
+	rows, err := db.Query(stmt, *UserID, Email)
+	
+	if err != nil {
+		fmt.Printf("Error from Database Connection")
+		return err, false
 	}
 
 	ret := rows.Next()
 	rows.Close()
-	return ret
+	return nil, ret
 }
 
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +207,7 @@ func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	port := ":8082"
-	bf := CreateBloomFilter(1000)
+	bf := NewBloomFilter(1000)
 	http.HandleFunc("/populateBF", bf.populateBF)
 	http.HandleFunc("/checkBF", bf.checkBF)
 	http.HandleFunc("/clearBF", bf.clearBF)

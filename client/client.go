@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
-	"strings"
 
+	"github.com/caarlos0/env"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -35,12 +36,22 @@ type HealthStatus struct {
 }
 
 type HitMiss struct {
-	Hits  int
-	Total int
-	Suppressions []string
+	Hits 		 int
+	Miss         int
+	Total        int
+	Suppressions int
 }
 
-func Check(userID int, emails []string) (error, HitMiss) {
+type Config struct {
+	Size             int `env:"BLOOM_SIZE" envDefault:"1000"`
+	Port             string `env:"BLOOM_PORT" envDefault:"8082"`
+	NumTables        int `env:"BLOOM_NUM_TABLES" envDefault:"5"`
+	NumUsers         int `env:"BLOOM_NUM_USERS" envDefault:"10"`
+	NumEmails        int `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
+	NumHashFunctions uint `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
+}
+
+func Check(cfg Config, userID int, emails []string) (error, HitMiss) {
 	user := User{
 		UserID: &userID,
 		Email:  emails,
@@ -53,7 +64,9 @@ func Check(userID int, emails []string) (error, HitMiss) {
 		return err, hitMissStruct
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:8082/checkBF", bytes.NewBuffer(userJSON))
+	endpoint := fmt.Sprintf("http://localhost:%s/checkBF", cfg.Port)
+
+	req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer(userJSON))
 	if err != nil {
 		return err, hitMissStruct
 	}
@@ -83,8 +96,9 @@ func Check(userID int, emails []string) (error, HitMiss) {
 	return nil, hitMissStruct
 }
 
-func Clear() error {
-	req, err := http.NewRequest("GET", "http://localhost:8082/clearBF", nil)
+func Clear(cfg Config) error {
+	endpoint := fmt.Sprintf("http://localhost:%s/clearBF", cfg.Port)
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -109,7 +123,7 @@ func Clear() error {
 	return nil
 }
 
-func Populate() error {
+func Populate(cfg Config) error {
 	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
@@ -131,7 +145,6 @@ func Populate() error {
 		fmt.Println("Error from Database Connection")
 	}
 
-	// populate tableNames
 	for rows.Next() {
 		var tableName string
 		rows.Scan(&tableName)
@@ -140,7 +153,6 @@ func Populate() error {
 
 	rows.Close()
 
-	// build userMap
 	for _, tableName := range tableNames {
 		stmt := fmt.Sprintf("SELECT uid, email FROM UserStructs.%s", tableName)
 		rows, err := db.Query(stmt)
@@ -163,20 +175,20 @@ func Populate() error {
 		}
 
 		rows.Close()
-	}
+	}	
 
 	writeDataToFile(userMap)
 
-	userList := make([]User, len(userMap)) // userList is a list of User structs: [User, User, User]
+	userList := make([]User, len(userMap))
 	index := 0
 
-	// build userList from the values in userMap
 	for key, value := range userMap {
+		temp := key
 		userList[index] = User{
-			UserID: &key,
+			UserID: &temp,
 			Email:  value,
 		}
-		index++
+		index += 1
 	}
 
 	userJSON, err := json.MarshalIndent(userList, "", "  ")
@@ -184,7 +196,9 @@ func Populate() error {
 		return err
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:8082/populateBF", bytes.NewBuffer(userJSON))
+	endpoint := fmt.Sprintf("http://localhost:%s/populateBF", cfg.Port)
+
+	req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer(userJSON))
 	if err != nil {
 		return err
 	}
@@ -209,8 +223,10 @@ func Populate() error {
 	return nil
 }
 
-func HealthCheck() error {
-	req, err := http.NewRequest("GET", "http://localhost:8082/healthBF", nil)
+func HealthCheck(cfg Config) error {
+	endpoint := fmt.Sprintf("http://localhost:%s/healthBF", cfg.Port)
+
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -249,10 +265,24 @@ func writeDataToFile(userMap map[int][]string) {
 	defer file.Close()
 
 	for key, value := range userMap {
-		emailsNotInBF := makeRandomEmails(rand.Intn(5) + 1)
-		dataString := fmt.Sprintf("%d:%s %s\n", key, strings.Join(value, " "), strings.Join(emailsNotInBF, " "))
-
-		file.WriteString(dataString)
-
+		for _, email := range value{
+			dataString := fmt.Sprintf("%d:%s\n", key, email)
+			file.WriteString(dataString)
+		}
+		emailsNotInBF := makeRandomEmails(rand.Intn(1000) + 1)
+		for _, email := range emailsNotInBF {
+			dataString := fmt.Sprintf("%d:%s\n", key, email)
+			file.WriteString(dataString)
+		}
 	}
+}
+
+func GetEnv() Config {
+	cfg := Config{}
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return cfg
 }

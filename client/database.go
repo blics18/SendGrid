@@ -43,9 +43,6 @@ func insertToTables(numTables int, usr User, db *sql.DB) error {
 }
 
 func PopulateDB(numUsers int, numEmails int, numTables int) *sql.DB {
-	//numEmails := 100
-	//numUsers := 10
-
 	p := MakeRandomUsers(numUsers, numEmails)
 
 	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")

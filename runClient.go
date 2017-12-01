@@ -13,56 +13,76 @@ import (
 
 func main() {
 	fmt.Println("Starting Client")
-	
-	client.HealthCheck()
 
+	cfg := client.GetEnv()
+
+	client.HealthCheck(cfg)
+
+	db := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables)
+	defer db.Close()
+
+	client.Populate(cfg)
+
+	fileHandle, err := os.Open("data/data.txt")
+	defer fileHandle.Close()
+	fileScanner := bufio.NewReader(fileHandle)
+	totalMisses := 0
+	totalEmails := 0
+	totalHits := 0
+	userMap := make(map[int][]string)
 	for {
-		// populate the MySQL Database - numUsers, numEmails, numTables
-		db := client.PopulateDB(5, 1000, 5)
-		defer db.Close()
-
-		// populate the Bloom Filter from values in the MySQL Database
-		client.Populate()
-
-		fileHandle, err := os.Open("data/data.txt")
-		defer fileHandle.Close()
-		fileScanner := bufio.NewReader(fileHandle)
-		totalMisses := 0
-		totalEmails := 0
+		var buffer bytes.Buffer
+		var l []byte
+		var isPrefix bool
 		for {
-			var buffer bytes.Buffer
-			var l []byte
-			var isPrefix bool
-			for {
-				l, isPrefix, err = fileScanner.ReadLine()
-				buffer.Write(l)
-				if !isPrefix {
-					break
-				}
-				if err != nil {
-					break
-				}
-			}
-			if err == io.EOF {
+			l, isPrefix, err = fileScanner.ReadLine()
+			buffer.Write(l)
+			if !isPrefix {
 				break
 			}
-			s := buffer.String()
-			numMisses := 0
-			numEmails := 0
-			line := strings.Split(s, ":")
-			id, emails := line[0], line[1]
-			userID, _ := strconv.Atoi(id)
-			userEmails := strings.Split(emails, " ")
-			_, resp := client.Check(userID, userEmails)
-			totalEmails += len(userEmails)
-			numMisses += resp.Hits
-			totalMisses += numMisses
-			numEmails += resp.Total
-			totalEmails += numEmails
-			fmt.Println("Individual Ratio: ", float64(numMisses)/float64(numEmails))
+			if err != nil {
+				break
+			}
 		}
-		fmt.Println("Total Ratio: ", float64(totalMisses)/float64(totalEmails))
+
+		if err == io.EOF {
+			break
+		}
+
+		s := buffer.String()
+		
+		line := strings.Split(s, ":")
+		id, email := line[0], line[1]
+		userID, _ := strconv.Atoi(id)
+
+		_, exists := userMap[userID]
+
+		if exists {
+			userMap[userID] = append(userMap[userID], email)
+		} else {
+			userMap[userID] = []string{email}
+		}
 	}
+
+	for key, value := range userMap {
+		_, resp := client.Check(cfg, key, value)
+		numHits := 0
+		numMisses := 0
+		numEmails := 0
+		totalEmails += len(value)
+		numHits += resp.Hits
+		numMisses += resp.Miss
+		totalMisses += numMisses
+		numEmails += resp.Total
+		totalHits += numHits
+		totalEmails += numEmails
+		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", key), float64(numHits)/float64(numEmails))
+		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", key), float64(numMisses)/float64(numEmails))
+		fmt.Println()
+	}
+		
+	fmt.Println("Total Hits Ratio: ", float64(totalHits)/float64(totalEmails))
+	fmt.Println("Total Miss Ratio: ", float64(totalMisses)/float64(totalEmails))
 }
 
 	// drop all of the tables in UserStructs schema

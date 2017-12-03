@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/blics18/SendGrid/client"
 	"bufio"
 	"bytes"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/blics18/SendGrid/client"
 )
 
 func main() {
@@ -18,7 +19,13 @@ func main() {
 
 	client.HealthCheck(cfg)
 
-	db := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables)
+	db, err := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables)
+
+	if err != nil {
+		fmt.Println("Unable to populate database")
+		return
+	}
+
 	defer db.Close()
 
 	client.Populate(cfg)
@@ -50,7 +57,7 @@ func main() {
 		}
 
 		s := buffer.String()
-		
+
 		line := strings.Split(s, ":")
 		id, email := line[0], line[1]
 		userID, _ := strconv.Atoi(id)
@@ -80,13 +87,13 @@ func main() {
 		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", key), float64(numMisses)/float64(numEmails))
 		fmt.Println()
 	}
-		
+
 	fmt.Println("Total Hits Ratio: ", float64(totalHits)/float64(totalEmails))
 	fmt.Println("Total Miss Ratio: ", float64(totalMisses)/float64(totalEmails))
 }
 
-	// drop all of the tables in UserStructs schema
-	// err := client.DropTables(db)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+// drop all of the tables in UserStructs schema
+// err := client.DropTables(db)
+// if err != nil {
+// 	fmt.Println(err)
+// }

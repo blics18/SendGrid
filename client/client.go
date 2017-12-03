@@ -36,19 +36,20 @@ type HealthStatus struct {
 }
 
 type HitMiss struct {
-	Hits 		 int
+	Hits         int
 	Miss         int
 	Total        int
 	Suppressions int
 }
 
 type Config struct {
-	Size             int `env:"BLOOM_SIZE" envDefault:"1000"`
+	Size             int    `env:"BLOOM_SIZE" envDefault:"1000"`
 	Port             string `env:"BLOOM_PORT" envDefault:"8082"`
-	NumTables        int `env:"BLOOM_NUM_TABLES" envDefault:"5"`
-	NumUsers         int `env:"BLOOM_NUM_USERS" envDefault:"10"`
-	NumEmails        int `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
-	NumHashFunctions uint `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
+
+	NumTables        int    `env:"BLOOM_NUM_TABLES" envDefault:"5"`
+	NumUsers         int    `env:"BLOOM_NUM_USERS" envDefault:"10"`
+	NumEmails        int    `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
+	NumHashFunctions uint   `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
 }
 
 func Check(cfg Config, userID int, emails []string) (error, HitMiss) {
@@ -124,16 +125,18 @@ func Clear(cfg Config) error {
 }
 
 func Populate(cfg Config) error {
-	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
+	db, err := sql.Open("mysql", "root:@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Printf("Failed to get handle\n")
 		db.Close()
+		return err
 	}
 
 	err = db.Ping()
 	if err != nil {
 		fmt.Println(err)
 		db.Close()
+		return err
 	}
 
 	var tableNames []string           // tableNames is a list of tables. Example: [User00, User01, User03, ...]
@@ -143,6 +146,7 @@ func Populate(cfg Config) error {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		fmt.Println("Error from Database Connection")
+		return err
 	}
 
 	for rows.Next() {
@@ -158,6 +162,7 @@ func Populate(cfg Config) error {
 		rows, err := db.Query(stmt)
 		if err != nil {
 			fmt.Printf("Error from Database Connection")
+			return err
 		}
 
 		for rows.Next() {
@@ -175,7 +180,7 @@ func Populate(cfg Config) error {
 		}
 
 		rows.Close()
-	}	
+	}
 
 	writeDataToFile(userMap)
 
@@ -265,7 +270,7 @@ func writeDataToFile(userMap map[int][]string) {
 	defer file.Close()
 
 	for key, value := range userMap {
-		for _, email := range value{
+		for _, email := range value {
 			dataString := fmt.Sprintf("%d:%s\n", key, email)
 			file.WriteString(dataString)
 		}

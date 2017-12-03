@@ -6,22 +6,29 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/blics18/SendGrid/client"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/willf/bloom"
+
+	"github.com/cyberdelia/go-metrics-graphite"
+	"github.com/rcrowley/go-metrics"
 )
 
 type bloomFilter struct {
 	Filter *bloom.BloomFilter
-	db *sql.DB
-	cfg client.Config
+	db     *sql.DB
+	cfg    client.Config
 }
 
 func NewBloomFilter(size int) *bloomFilter {
-	db, err := sql.Open("mysql", "root:SendGrid@tcp(localhost:3306)/UserStructs")
+	addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
+	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+
+	db, err := sql.Open("mysql", "root:@tcp(localhost:3306)/UserStructs")
 	if err != nil {
 		fmt.Println("Failed to get handle")
 	}
@@ -35,20 +42,23 @@ func NewBloomFilter(size int) *bloomFilter {
 
 	return &bloomFilter{
 		Filter: bloom.New(20*uint(cfg.Size), cfg.NumHashFunctions),
-		db: db,
-		cfg: cfg,
+		db:     db,
+		cfg:    cfg,
 	}
 }
 
 func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Could not read the body of the request"))
+		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Could not read the body of the request"))
+		return
 	}
 
 	defer r.Body.Close()
@@ -78,6 +88,9 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
+	metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
+	log.Printf("hit")
+
 	for _, user := range users {
 		for _, email := range user.Email {
 			bf.Filter.Add([]byte(fmt.Sprintf("%d|%s", *user.UserID, email)))
@@ -98,6 +111,7 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Could not read the body of the request"))
+		return
 	}
 
 	defer r.Body.Close()
@@ -124,18 +138,16 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hitMissStruct := &client.HitMiss{
-		Hits:  	      0,
+		Hits:         0,
 		Miss:         0,
 		Total:        0,
 		Suppressions: 0,
 	}
 
-	// var suppresions []string
-
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
-			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
-			err, inDB := crossCheck(bf.db, bf.cfg, user.UserID, email)
+			w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
+			inDB, err := crossCheck(bf.db, bf.cfg, user.UserID, email)
 			if err == nil && inDB == true {
 				//w.Write([]byte(email + " is in the database"))
 				//fmt.Println(email + " is in the database")
@@ -157,8 +169,6 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// hitMissStruct.Suppressions = len(suppresions)
-
 	hitMissJSON, err := json.MarshalIndent(hitMissStruct, "", " ")
 	if err != nil {
 		return
@@ -167,24 +177,23 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	w.Write(hitMissJSON)
 }
 
-func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (error, bool) {
-	stmt := fmt.Sprintf("SELECT uid, email FROM User%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
-	rows, err := db.Query(stmt, *UserID, Email)
+func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool, error) {
+	// var userid int
+	var email string
+	stmt := fmt.Sprintf("SELECT email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
+	err := db.QueryRow(stmt, *UserID, Email).Scan(&email)
 
-	if err != nil {
-		fmt.Printf("Error from Database Connection")
-		return err, false
+	if err == sql.ErrNoRows {
+		return false, nil
 	}
 
-	ret := rows.Next()
-	rows.Close()
-	return nil, ret
+	return true, nil
 }
 
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	bf.Filter.ClearAll()
 	w.WriteHeader(http.StatusOK)
-	//w.Write([]byte("Successfully Cleared Bloom Filter"))
+	w.Write([]byte("Successfully Cleared Bloom Filter"))
 }
 
 func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {

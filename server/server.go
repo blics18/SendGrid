@@ -135,48 +135,36 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hitMissStruct := &client.HitMiss{
+	statStruct := &client.Stats{
 		Hits:         0,
 		Miss:         0,
 		Total:        0,
 		Suppressions: 0,
 	}
 
-	// var suppresions []string
-
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
-			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			inDB, err := crossCheck(bf.db, bf.cfg, user.UserID, email)
 			if err == nil && inDB == true {
-				//w.Write([]byte(email + " is in the database"))
-				//fmt.Println(email + " is in the database")
-				//suppresions = append(suppresions, email)
-				hitMissStruct.Suppressions += 1
-				hitMissStruct.Total += 1
-				hitMissStruct.Hits += 1
+				statStruct.Suppressions += 1
+				statStruct.Total += 1
+				statStruct.Hits += 1
 			} else {
-				//w.Write([]byte(email + " is not in the database"))
-				//fmt.Println(email + " is not in the database")
-				hitMissStruct.Miss += 1
-				hitMissStruct.Total += 1
+				statStruct.Miss += 1
+				statStruct.Total += 1
 			}
 		} else {
-			//w.Write([]byte(email + " is not in the bloom filter"))
-			//fmt.Println(email + " is not in the BF")
-			hitMissStruct.Total += 1
-			hitMissStruct.Hits += 1
+			statStruct.Total += 1
+			statStruct.Hits += 1
 		}
 	}
 
-	// hitMissStruct.Suppressions = len(suppresions)
-
-	hitMissJSON, err := json.MarshalIndent(hitMissStruct, "", " ")
+	statJSON, err := json.MarshalIndent(statStruct, "", " ")
 	if err != nil {
 		return
 	}
 
-	w.Write(hitMissJSON)
+	w.Write(statJSON)
 }
 
 func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool, error) {

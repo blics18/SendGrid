@@ -1,15 +1,19 @@
 package client
 
 import (
+	"bufio"
 	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/caarlos0/env"
 	_ "github.com/go-sql-driver/mysql"
@@ -35,40 +39,40 @@ type HealthStatus struct {
 	}
 }
 
-type HitMiss struct {
-	Hits 		 int
+type Stats struct {
+	Hits         int
 	Miss         int
 	Total        int
 	Suppressions int
 }
 
 type Config struct {
-	Size             int `env:"BLOOM_SIZE" envDefault:"1000"`
+	Size             int    `env:"BLOOM_SIZE" envDefault:"1000"`
 	Port             string `env:"BLOOM_PORT" envDefault:"8082"`
-	NumTables        int `env:"BLOOM_NUM_TABLES" envDefault:"5"`
-	NumUsers         int `env:"BLOOM_NUM_USERS" envDefault:"10"`
-	NumEmails        int `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
-	NumHashFunctions uint `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
+	NumTables        int    `env:"BLOOM_NUM_TABLES" envDefault:"5"`
+	NumUsers         int    `env:"BLOOM_NUM_USERS" envDefault:"10"`
+	NumEmails        int    `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
+	NumHashFunctions uint   `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
 }
 
-func Check(cfg Config, userID int, emails []string) (error, HitMiss) {
+func Check(cfg Config, userID int, emails []string) (Stats, error) {
 	user := User{
 		UserID: &userID,
 		Email:  emails,
 	}
 
-	var hitMissStruct HitMiss
+	var statStruct Stats
 
 	userJSON, err := json.MarshalIndent(user, "", " ")
 	if err != nil {
-		return err, hitMissStruct
+		return statStruct, err
 	}
 
 	endpoint := fmt.Sprintf("http://localhost:%s/checkBF", cfg.Port)
 
 	req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer(userJSON))
 	if err != nil {
-		return err, hitMissStruct
+		return statStruct, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -77,23 +81,23 @@ func Check(cfg Config, userID int, emails []string) (error, HitMiss) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err, hitMissStruct
+		return statStruct, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err, hitMissStruct
+		return statStruct, err
 	}
 
-	err = json.Unmarshal(body, &hitMissStruct)
+	err = json.Unmarshal(body, &statStruct)
 	if err != nil {
-		return err, hitMissStruct
+		return statStruct, err
 	}
 
 	fmt.Println("Response: ", string(body))
 
 	resp.Body.Close()
-	return nil, hitMissStruct
+	return statStruct, nil
 }
 
 func Clear(cfg Config) error {
@@ -138,8 +142,8 @@ func Populate(cfg Config) error {
 		return err
 	}
 
-	var tableNames []string           // tableNames is a list of tables. Example: [User00, User01, User03, ...]
-	userMap := make(map[int][]string) // userMap is a map that consists of User ID's as keys, with their value as a list of emails. //Ex: [5: ["jim@yahoo.com", "trevor@aol.com"]
+	var tableNames []string
+	userMap := make(map[int][]string)
 
 	stmt := fmt.Sprintf("SELECT TABLE_NAME AS tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA='UserStructs'")
 	rows, err := db.Query(stmt)
@@ -170,7 +174,6 @@ func Populate(cfg Config) error {
 			rows.Scan(&id, &email)
 
 			_, exists := userMap[id]
-
 			if exists {
 				userMap[id] = append(userMap[id], email)
 			} else {
@@ -179,7 +182,7 @@ func Populate(cfg Config) error {
 		}
 
 		rows.Close()
-	}	
+	}
 
 	writeDataToFile(userMap)
 
@@ -269,7 +272,7 @@ func writeDataToFile(userMap map[int][]string) {
 	defer file.Close()
 
 	for key, value := range userMap {
-		for _, email := range value{
+		for _, email := range value {
 			dataString := fmt.Sprintf("%d:%s\n", key, email)
 			file.WriteString(dataString)
 		}
@@ -281,12 +284,58 @@ func writeDataToFile(userMap map[int][]string) {
 	}
 }
 
+func ParseFile() map[int][]string {
+	fileHandle, err := os.Open("data/data.txt")
+
+	defer fileHandle.Close()
+
+	fileScanner := bufio.NewReader(fileHandle)
+
+	userMap := make(map[int][]string)
+
+	for {
+		var buffer bytes.Buffer
+		var l []byte
+		var isPrefix bool
+
+		for {
+			l, isPrefix, err = fileScanner.ReadLine()
+			buffer.Write(l)
+			if !isPrefix {
+				break
+			}
+			if err != nil {
+				break
+			}
+		}
+
+		if err == io.EOF {
+			break
+		}
+
+		s := buffer.String()
+
+		line := strings.Split(s, ":")
+		id, email := line[0], line[1]
+		userID, _ := strconv.Atoi(id)
+
+		_, exists := userMap[userID]
+
+		if exists {
+			userMap[userID] = append(userMap[userID], email)
+		} else {
+			userMap[userID] = []string{email}
+		}
+	}
+
+	return userMap
+}
+
 func GetEnv() Config {
 	cfg := Config{}
 	err := env.Parse(&cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	return cfg
 }

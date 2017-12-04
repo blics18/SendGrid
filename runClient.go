@@ -1,14 +1,9 @@
 package main
 
 import (
-	"github.com/blics18/SendGrid/client"
-	"bufio"
-	"bytes"
 	"fmt"
-	"io"
-	"os"
-	"strconv"
-	"strings"
+
+	"github.com/blics18/SendGrid/client"
 )
 
 func main() {
@@ -20,79 +15,33 @@ func main() {
 
 	db, err := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables)
 
-	if err != nil{
+	if err != nil {
 		fmt.Println("Unable to populate database")
 		return
 	}
-	
+
 	defer db.Close()
 
 	client.Populate(cfg)
 
-	fileHandle, err := os.Open("data/data.txt")
-	defer fileHandle.Close()
-	fileScanner := bufio.NewReader(fileHandle)
+	userMap := client.ParseFile()
+
 	totalMisses := 0
 	totalEmails := 0
 	totalHits := 0
-	userMap := make(map[int][]string)
-	for {
-		var buffer bytes.Buffer
-		var l []byte
-		var isPrefix bool
-		for {
-			l, isPrefix, err = fileScanner.ReadLine()
-			buffer.Write(l)
-			if !isPrefix {
-				break
-			}
-			if err != nil {
-				break
-			}
-		}
 
-		if err == io.EOF {
-			break
-		}
+	for userID, userEmails := range userMap {
+		resp, _ := client.Check(cfg, userID, userEmails)
 
-		s := buffer.String()
-		
-		line := strings.Split(s, ":")
-		id, email := line[0], line[1]
-		userID, _ := strconv.Atoi(id)
+		totalMisses += resp.Miss
+		totalHits += resp.Hits
+		totalEmails += resp.Total
 
-		_, exists := userMap[userID]
-
-		if exists {
-			userMap[userID] = append(userMap[userID], email)
-		} else {
-			userMap[userID] = []string{email}
-		}
-	}
-
-	for key, value := range userMap {
-		_, resp := client.Check(cfg, key, value)
-		numHits := 0
-		numMisses := 0
-		numEmails := 0
-		totalEmails += len(value)
-		numHits += resp.Hits
-		numMisses += resp.Miss
-		totalMisses += numMisses
-		numEmails += resp.Total
-		totalHits += numHits
-		totalEmails += numEmails
-		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", key), float64(numHits)/float64(numEmails))
-		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", key), float64(numMisses)/float64(numEmails))
+		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", userID), float64(resp.Hits)/float64(resp.Total))
+		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", userID), float64(resp.Miss)/float64(resp.Total))
 		fmt.Println()
 	}
-		
+
 	fmt.Println("Total Hits Ratio: ", float64(totalHits)/float64(totalEmails))
 	fmt.Println("Total Miss Ratio: ", float64(totalMisses)/float64(totalEmails))
 }
-
-	// drop all of the tables in UserStructs schema
-	// err := client.DropTables(db)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }

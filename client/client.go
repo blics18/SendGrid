@@ -36,19 +36,18 @@ type HealthStatus struct {
 }
 
 type HitMiss struct {
-	Hits         int
+	Hits 		 int
 	Miss         int
 	Total        int
 	Suppressions int
 }
 
 type Config struct {
-	Size int    `env:"BLOOM_SIZE" envDefault:"1000"`
-	Port string `env:"BLOOM_PORT" envDefault:"8082"`
-
-	NumTables        int  `env:"BLOOM_NUM_TABLES" envDefault:"5"`
-	NumUsers         int  `env:"BLOOM_NUM_USERS" envDefault:"10"`
-	NumEmails        int  `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
+	Size             int `env:"BLOOM_SIZE" envDefault:"1000"`
+	Port             string `env:"BLOOM_PORT" envDefault:"8082"`
+	NumTables        int `env:"BLOOM_NUM_TABLES" envDefault:"5"`
+	NumUsers         int `env:"BLOOM_NUM_USERS" envDefault:"10"`
+	NumEmails        int `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
 	NumHashFunctions uint `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
 }
 
@@ -180,7 +179,7 @@ func Populate(cfg Config) error {
 		}
 
 		rows.Close()
-	}
+	}	
 
 	writeDataToFile(userMap)
 
@@ -270,7 +269,7 @@ func writeDataToFile(userMap map[int][]string) {
 	defer file.Close()
 
 	for key, value := range userMap {
-		for _, email := range value {
+		for _, email := range value{
 			dataString := fmt.Sprintf("%d:%s\n", key, email)
 			file.WriteString(dataString)
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 // func createTable(numTables int, db *sql.DB) error {
-// 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS Unsub%02d (
+// 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS User%02d (
 // 		id int NOT NULL AUTO_INCREMENT,
 // 		uid int(255) NOT NULL,
 // 		email varchar(255) DEFAULT NULL, PRIMARY KEY (id)) 
@@ -38,7 +38,6 @@ func insertToTables(numTables int, usr User, db *sql.DB) error {
 			return err
 		}
 	}
-
 
 	return nil
 }
@@ -80,7 +79,7 @@ func PopulateDB(numUsers int, numEmails int, numTables int) (*sql.DB, error) {
 
 func DropTables(numTables int, db *sql.DB) error {
 	for i := 0; i < numTables; i++ {
-		stmt := fmt.Sprintf("DROP TABLE User%02d", i)
+		stmt := fmt.Sprintf("DROP TABLE Unsub%02d", i)
 		_, err := db.Exec(stmt)
 		if err != nil {
 			fmt.Println(err)

@@ -1,6 +1,4 @@
 vendors:
-- path: github.com/blics18/SendGrid
-  rev: 6a962fd8bb2b674ae22f33d2612b0704c91bfb6e
 - path: github.com/caarlos0/env
   rev: 2eb62c9a31114310efda953408ecd1c294b4db04
 - path: github.com/cyberdelia/go-metrics-graphite

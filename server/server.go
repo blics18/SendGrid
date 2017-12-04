@@ -9,13 +9,11 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-
+	"github.com/rcrowley/go-metrics"
+	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/blics18/SendGrid/client"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/willf/bloom"
-
-	"github.com/cyberdelia/go-metrics-graphite"
-	"github.com/rcrowley/go-metrics"
 )
 
 type bloomFilter struct {
@@ -144,9 +142,11 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		Suppressions: 0,
 	}
 
+	// var suppresions []string
+
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
-			//	w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
+			//w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			inDB, err := crossCheck(bf.db, bf.cfg, user.UserID, email)
 			if err == nil && inDB == true {
 				//w.Write([]byte(email + " is in the database"))
@@ -169,6 +169,8 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// hitMissStruct.Suppressions = len(suppresions)
+
 	hitMissJSON, err := json.MarshalIndent(hitMissStruct, "", " ")
 	if err != nil {
 		return
@@ -178,12 +180,11 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 }
 
 func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool, error) {
-	// var userid int
 	var email string
-	stmt := fmt.Sprintf("SELECT email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
+	stmt := fmt.Sprintf("SELECT uid, email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
 	err := db.QueryRow(stmt, *UserID, Email).Scan(&email)
 
-	if err == sql.ErrNoRows {
+	if err == sql.ErrNoRows{
 		return false, nil
 	}
 

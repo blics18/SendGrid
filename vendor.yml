@@ -8,7 +8,7 @@ vendors:
 - path: github.com/davecgh/go-spew
   rev: ecdeabc65495df2dec95d7c4a4c3e021903035e5
 - path: github.com/go-sql-driver/mysql
-  rev: cd4cb909ce1a31435164be29bf3682031f61539a
+  rev: 9181e3a86a19bacd63e68d43ae8b7b36320d8092
 - path: github.com/pmezard/go-difflib
   rev: 792786c7400a136282c1664665ae0a8db921c6c2
 - path: github.com/rcrowley/go-metrics

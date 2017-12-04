@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,7 +25,7 @@ func TestUnsubCheck(t *testing.T) {
 	userIDEmail := "1|eFeOnJkMqw@aol.com"
 	email := "eFeOnJkMqw@aol.com"
 	bf := NewBloomFilter(1000)
-	bf.filter.Add([]byte(userIDEmail))
+	bf.Filter.Add([]byte(userIDEmail))
 
 	user := client.User{
 		UserID: &userID,
@@ -50,10 +49,14 @@ func TestUnsubCheck(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := fmt.Sprintf("%s is in the bloom filter. Cross checking...%s is not in the database", email, email)
-	if rr.Body.String() != expected {
+	var statStruct client.Stats
+	statStruct.Miss = 1
+	statStruct.Total = 1
+	structToStr, _ := json.MarshalIndent(statStruct, "", " ")
+
+	if rr.Body.String() != string(structToStr) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			rr.Body.String(), string(structToStr))
 	}
 }
 
@@ -63,7 +66,7 @@ func TestUnsubClear(t *testing.T) {
 	email := "hzSfMqs@aol.com"
 	bf := NewBloomFilter(1000)
 
-	bf.filter.Add([]byte(userIDEmail))
+	bf.Filter.Add([]byte(userIDEmail))
 
 	user := client.User{
 		UserID: &userID,
@@ -87,10 +90,15 @@ func TestUnsubClear(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := fmt.Sprintf("%s is in the bloom filter. Cross checking...%s is not in the database", email, email)
-	if rr.Body.String() != expected {
+	var statStruct client.Stats
+	statStruct.Miss = 1
+	statStruct.Total = 1
+	structToStr, _ := json.MarshalIndent(statStruct, "", " ")
+
+
+	if rr.Body.String() != string(structToStr) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			rr.Body.String(), string(structToStr))
 	}
 
 	clearReq, err := http.NewRequest("GET", "/clearBF", bytes.NewBuffer(userJSON))
@@ -129,9 +137,13 @@ func TestUnsubClear(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	checkExpected := fmt.Sprintf("%s is not in the bloom filter", email)
-	if checkRR.Body.String() != checkExpected {
+	statStruct.Hits = 1
+	statStruct.Miss = 0
+	statStruct.Total = 1
+	structToStr, _ = json.MarshalIndent(statStruct, "", " ")
+
+	if checkRR.Body.String() != string(structToStr) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			checkRR.Body.String(), checkExpected)
+			checkRR.Body.String(), string(structToStr))
 	}
 }

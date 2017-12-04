@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
+	// "net"
 	"net/http"
 	"strconv"
-	"github.com/rcrowley/go-metrics"
-	"github.com/cyberdelia/go-metrics-graphite"
+	// "github.com/rcrowley/go-metrics"
+	// "github.com/cyberdelia/go-metrics-graphite"
 	"github.com/blics18/SendGrid/client"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/willf/bloom"
@@ -23,8 +23,8 @@ type bloomFilter struct {
 }
 
 func NewBloomFilter(size int) *bloomFilter {
-	addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+	// addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
+	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	db, err := sql.Open("mysql", "root:@tcp(localhost:3306)/UserStructs")
 	if err != nil {
@@ -86,8 +86,8 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
-	metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
-	log.Printf("hit")
+	// metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
+	// log.Printf("hit")
 
 	for _, user := range users {
 		for _, email := range user.Email {

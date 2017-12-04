@@ -146,7 +146,7 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
-			w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
+			//	w.Write([]byte(email + " is in the bloom filter. Cross checking..."))
 			inDB, err := crossCheck(bf.db, bf.cfg, user.UserID, email)
 			if err == nil && inDB == true {
 				//w.Write([]byte(email + " is in the database"))

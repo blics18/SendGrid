@@ -43,13 +43,13 @@ type HitMiss struct {
 }
 
 type Config struct {
-	Size             int    `env:"BLOOM_SIZE" envDefault:"1000"`
-	Port             string `env:"BLOOM_PORT" envDefault:"8082"`
+	Size int    `env:"BLOOM_SIZE" envDefault:"1000"`
+	Port string `env:"BLOOM_PORT" envDefault:"8082"`
 
-	NumTables        int    `env:"BLOOM_NUM_TABLES" envDefault:"5"`
-	NumUsers         int    `env:"BLOOM_NUM_USERS" envDefault:"10"`
-	NumEmails        int    `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
-	NumHashFunctions uint   `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
+	NumTables        int  `env:"BLOOM_NUM_TABLES" envDefault:"5"`
+	NumUsers         int  `env:"BLOOM_NUM_USERS" envDefault:"10"`
+	NumEmails        int  `env:"BLOOM_NUM_EMAILS" envDefault:"1000"`
+	NumHashFunctions uint `env:"BLOOM_NUM_HASH_FUNCTIONS envDefault:"5"`
 }
 
 func Check(cfg Config, userID int, emails []string) (error, HitMiss) {

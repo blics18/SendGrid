@@ -50,7 +50,6 @@ func NewBloomFilter(size int) *bloomFilter {
 func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	timer := metrics.GetOrRegisterTimer("bloom.Filter.populateBF_Response", nil)
 	start := time.Now()
-	// timer.Time(func() {})
 
 	if r.Body == nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -93,9 +92,6 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
 	metrics.GetOrRegisterCounter("bloom.Filter.populateBF_Request", nil).Inc(1)
-
-	log.Printf("hit")
-
 
 	for _, user := range users {
 		for _, email := range user.Email {
@@ -149,15 +145,16 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Request", nil).Inc(1)
-
 	statStruct := &client.Stats{
+		UserID:			   0,
 		Hits:              0,
 		Miss:              0,
 		NumEmails:         0,
 		Suppressions:      []string{},
 		TotalSuppressions: 0,
 	}
+
+	statStruct.UserID = *user.UserID
 
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
@@ -184,15 +181,17 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(statJSON)
 
+	metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Request", nil).Inc(1)
+
 	duration := time.Since(start)
 	timer.Update(duration)
 }
 
 func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool, error) {
 	var email string
-	stmt := fmt.Sprintf("SELECT uid, email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
+	stmt := fmt.Sprintf("SELECT uid, email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%5)
+	
 	err := db.QueryRow(stmt, *UserID, Email).Scan(&email)
-
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -205,6 +204,7 @@ func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	
 	bf.Filter.ClearAll()
+	
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully Cleared Bloom Filter"))
 	
@@ -235,14 +235,14 @@ func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
 		healthStruct.Results.ConnectedToDB.OK = false
 	}
 
-	metrics.GetOrRegisterCounter("bloom.Filter.healthBF_Request", nil).Inc(1)
-
 	healthJSON, err := json.MarshalIndent(healthStruct, "", " ")
 	if err != nil {
 		return
 	}
 
 	w.Write(healthJSON)
+
+	metrics.GetOrRegisterCounter("bloom.Filter.healthBF_Request", nil).Inc(1)
 
 	duration := time.Since(start)
 	timer.Update(duration)

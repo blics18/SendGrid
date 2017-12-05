@@ -40,6 +40,7 @@ type HealthStatus struct {
 }
 
 type Stats struct {
+	UserID 		 int
 	Hits         int
 	Miss         int
 	NumEmails    int
@@ -321,7 +322,6 @@ func ParseFile() map[int][]string {
 		userID, _ := strconv.Atoi(id)
 
 		_, exists := userMap[userID]
-
 		if exists {
 			userMap[userID] = append(userMap[userID], email)
 		} else {

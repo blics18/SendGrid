@@ -52,8 +52,9 @@ func TestUnsubCheck(t *testing.T) {
 	var statStruct client.Stats
 	statStruct.Miss = 1
 	statStruct.Total = 1
+	
 	structToStr, _ := json.MarshalIndent(statStruct, "", " ")
-
+	
 	if rr.Body.String() != string(structToStr) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), string(structToStr))
@@ -92,9 +93,9 @@ func TestUnsubClear(t *testing.T) {
 
 	var statStruct client.Stats
 	statStruct.Miss = 1
-	statStruct.Total = 1
+	statStruct.Total = 
+	1
 	structToStr, _ := json.MarshalIndent(statStruct, "", " ")
-
 
 	if rr.Body.String() != string(structToStr) {
 		t.Errorf("handler returned unexpected body: got %v want %v",

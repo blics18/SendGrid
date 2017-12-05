@@ -7,13 +7,13 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting Client")
+	fmt.Println("Starting Client...")
 
 	cfg := client.GetEnv()
 
-	client.HealthCheck(cfg)
+	client.HealthCheck(cfg) // < -- Health Check Demo
 
-	db, err := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables)
+	db, err := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables) // <-- Populate the DB Demo
 
 	if err != nil {
 		fmt.Println("Unable to populate database")
@@ -22,7 +22,7 @@ func main() {
 
 	defer db.Close()
 
-	client.Populate(cfg)
+	client.Populate(cfg) // <-- Populate the BF demo
 
 	userMap := client.ParseFile()
 
@@ -31,7 +31,7 @@ func main() {
 	totalHits := 0
 
 	for userID, userEmails := range userMap {
-		resp, _ := client.Check(cfg, userID, userEmails)
+		resp, _ := client.Check(cfg, userID, userEmails) // <-- Check userID, email Demo
 
 		totalMisses += resp.Miss
 		totalHits += resp.Hits

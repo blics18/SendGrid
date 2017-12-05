@@ -15,17 +15,17 @@ import (
 	// "github.com/willf/bloom"
 )
 
-// func BenchmarkClear(b *testing.B) {
-// 	client.PopulateDB(10, 100, 5)
-// 	cfg := client.GetEnv()
-// 	b.ResetTimer()
-// 	for n := 0; n < b.N; n++ {
-// 		client.Populate(cfg)
-// 		b.StopTimer()
-// 		client.Clear(cfg)
-// 		b.StartTimer()
-// 	}
-// }
+func BenchmarkClear(b *testing.B) {
+	client.PopulateDB(10, 100, 5)
+	cfg := client.GetEnv()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		client.Populate(cfg)
+		b.StopTimer()
+		client.Clear(cfg)
+		b.StartTimer()
+	}
+}
 
 func BenchmarkPopulate(b *testing.B) {
 	client.PopulateDB(10, 100, 5)
@@ -40,38 +40,34 @@ func BenchmarkPopulate(b *testing.B) {
 	
 }
 
-// func benchmarkCheck(i int, email []string, b *testing.B) {
-// 	db, _ := client.PopulateDB(10, 100, 5)
-// 	client.Populate()
-// 	b.ResetTimer()
-// 	for n := 0; n < b.N; n++ {
-// 		client.Check(i, email)
-// 	}
-// 	client.DropTables(5, db)
-// 	db.Close()
-// }
+func benchmarkCheck(i int, email []string, b *testing.B) {
+	db, _ := client.PopulateDB(10, 100, 5)
+	client.Populate()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		client.Check(i, email)
+	}
+	client.DropTables(5, db)
+	db.Close()
+}
 
-// func BenchmarkCheck1(b *testing.B) {
-// 	users := client.MakeRandomUsers(1, 100)
-// 	for n := 0; n < len(users); n++ {
-// 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
-// 	}
-// }
+func BenchmarkCheck1(b *testing.B) {
+	users := client.MakeRandomUsers(1, 100)
+	for n := 0; n < len(users); n++ {
+		benchmarkCheck(*users[n].UserID, users[n].Email, b)
+	}
+}
 
-// func BenchmarkCheck10(b *testing.B) {
-// 	users := client.MakeRandomUsers(10, 100)
-// 	for n := 0; n < len(users); n++ {
-// 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
-// 	}
-// }
+func BenchmarkCheck10(b *testing.B) {
+	users := client.MakeRandomUsers(10, 100)
+	for n := 0; n < len(users); n++ {
+		benchmarkCheck(*users[n].UserID, users[n].Email, b)
+	}
+}
 
-/*
 func BenchmarkCheck1000(b *testing.B) {
 	users := client.MakeRandomUsers(1000, 100)
 	for n := 0; n < len(users); n++ {
 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
 	}
 }
-
-
-*/

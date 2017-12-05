@@ -48,7 +48,7 @@ func NewBloomFilter(size int) *bloomFilter {
 }
 
 func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
-	timer := metrics.GetOrRegisterTimer("bloom.Filter.populateTimer", nil)
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.populateBF_Response", nil)
 	start := time.Now()
 	// timer.Time(func() {})
 
@@ -92,10 +92,7 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
-	metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
-
-	// metrics.GetOrRegisterGauge("bloom.Filter.populatePS", nil)
-	// metrics.Unregister("bloom.Filter.populatePS")
+	metrics.GetOrRegisterCounter("bloom.Filter.populateBF_Request", nil).Inc(1)
 
 	log.Printf("hit")
 
@@ -109,12 +106,11 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	duration := time.Since(start)
-	//timer.Update(time.Duration(duration.Seconds()))
 	timer.Update(duration)
 }
 
 func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
-	timer := metrics.GetOrRegisterTimer("bloom.Filter.checkBF", nil)
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.checkBF_Response", nil)
 	start := time.Now()
 
 	if r.Body == nil {
@@ -153,7 +149,7 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter("bloom.Filter.check", nil).Inc(1)
+	metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Request", nil).Inc(1)
 
 	statStruct := &client.Stats{
 		Hits:              0,
@@ -189,7 +185,6 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	w.Write(statJSON)
 
 	duration := time.Since(start)
-	//timer.Update(time.Duration(duration.Seconds()))
 	timer.Update(duration)
 }
 
@@ -206,13 +201,23 @@ func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool,
 }
 
 func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.clearBF_Response", nil)
+	start := time.Now()
+	
 	bf.Filter.ClearAll()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully Cleared Bloom Filter"))
-	metrics.GetOrRegisterCounter("bloom.Filter.clear", nil).Inc(1)
+	
+	metrics.GetOrRegisterCounter("bloom.Filter.clearBF_Request", nil).Inc(1)
+
+	duration := time.Since(start)
+	timer.Update(duration)
 }
 
 func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.healthBF_Response", nil)
+	start := time.Now()
+
 	w.WriteHeader(http.StatusOK)
 
 	healthStruct := &client.HealthStatus{
@@ -230,7 +235,7 @@ func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
 		healthStruct.Results.ConnectedToDB.OK = false
 	}
 
-	metrics.GetOrRegisterCounter("bloom.Filter.health", nil).Inc(1)
+	metrics.GetOrRegisterCounter("bloom.Filter.healthBF_Request", nil).Inc(1)
 
 	healthJSON, err := json.MarshalIndent(healthStruct, "", " ")
 	if err != nil {
@@ -238,6 +243,9 @@ func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(healthJSON)
+
+	duration := time.Since(start)
+	timer.Update(duration)
 }
 
 func main() {

@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	// "net"
+	"net"
 	"net/http"
 	"strconv"
-	// "github.com/rcrowley/go-metrics"
-	// "github.com/cyberdelia/go-metrics-graphite"
+
 	"github.com/blics18/SendGrid/client"
+	"github.com/cyberdelia/go-metrics-graphite"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rcrowley/go-metrics"
 	"github.com/willf/bloom"
 )
 
@@ -23,8 +24,8 @@ type bloomFilter struct {
 }
 
 func NewBloomFilter(size int) *bloomFilter {
-	// addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
-	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+	addr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:2003")
+	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	db, err := sql.Open("mysql", "root:@tcp(localhost:3306)/UserStructs")
 	if err != nil {
@@ -46,6 +47,9 @@ func NewBloomFilter(size int) *bloomFilter {
 }
 
 func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
+	// timer := metrics.GetOrRegisterTimer("bloom.Filter.populateTimer", nil)
+	// timer.Time(func() {})
+
 	if r.Body == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Could not read the body of the request"))
@@ -86,8 +90,14 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
-	// metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
-	// log.Printf("hit")
+	metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
+	// perSecond("bloom.Filter.populatePS")
+
+	// metrics.GetOrRegisterGauge("bloom.Filter.populatePS", nil)
+	// metrics.Unregister("bloom.Filter.populatePS")
+
+	log.Printf("hit")
+	// timer.Stop()
 
 	for _, user := range users {
 		for _, email := range user.Email {
@@ -135,26 +145,30 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.GetOrRegisterCounter("bloom.Filter.check", nil).Inc(1)
+
 	statStruct := &client.Stats{
-		Hits:         0,
-		Miss:         0,
-		Total:        0,
-		Suppressions: 0,
+		Hits:              0,
+		Miss:              0,
+		NumEmails:         0,
+		Suppressions:      []string{},
+		TotalSuppressions: 0,
 	}
 
 	for _, email := range user.Email {
 		if bf.Filter.Test([]byte(fmt.Sprintf("%d|%s", *user.UserID, email))) {
 			inDB, err := crossCheck(bf.db, bf.cfg, user.UserID, email)
 			if err == nil && inDB == true {
-				statStruct.Suppressions += 1
-				statStruct.Total += 1
+				statStruct.Suppressions = append(statStruct.Suppressions, email)
+				statStruct.TotalSuppressions += 1
+				statStruct.NumEmails += 1
 				statStruct.Hits += 1
 			} else {
 				statStruct.Miss += 1
-				statStruct.Total += 1
+				statStruct.NumEmails += 1
 			}
 		} else {
-			statStruct.Total += 1
+			statStruct.NumEmails += 1
 			statStruct.Hits += 1
 		}
 	}
@@ -172,7 +186,7 @@ func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool,
 	stmt := fmt.Sprintf("SELECT uid, email FROM Unsub%02d WHERE uid=? AND email=?", (*UserID)%cfg.NumTables)
 	err := db.QueryRow(stmt, *UserID, Email).Scan(&email)
 
-	if err == sql.ErrNoRows{
+	if err == sql.ErrNoRows {
 		return false, nil
 	}
 
@@ -183,6 +197,7 @@ func (bf *bloomFilter) clearBF(w http.ResponseWriter, r *http.Request) {
 	bf.Filter.ClearAll()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully Cleared Bloom Filter"))
+	metrics.GetOrRegisterCounter("bloom.Filter.clear", nil).Inc(1)
 }
 
 func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
@@ -202,6 +217,8 @@ func (bf *bloomFilter) healthBF(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		healthStruct.Results.ConnectedToDB.OK = false
 	}
+
+	metrics.GetOrRegisterCounter("bloom.Filter.health", nil).Inc(1)
 
 	healthJSON, err := json.MarshalIndent(healthStruct, "", " ")
 	if err != nil {

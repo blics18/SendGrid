@@ -42,8 +42,9 @@ type HealthStatus struct {
 type Stats struct {
 	Hits         int
 	Miss         int
-	Total        int
-	Suppressions int
+	NumEmails    int
+	Suppressions []string
+	TotalSuppressions int
 }
 
 type Config struct {

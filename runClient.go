@@ -35,10 +35,10 @@ func main() {
 
 		totalMisses += resp.Miss
 		totalHits += resp.Hits
-		totalEmails += resp.Total
+		totalEmails += resp.NumEmails
 
-		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", userID), float64(resp.Hits)/float64(resp.Total))
-		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", userID), float64(resp.Miss)/float64(resp.Total))
+		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", userID), float64(resp.Hits)/float64(resp.NumEmails))
+		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", userID), float64(resp.Miss)/float64(resp.NumEmails))
 		fmt.Println()
 	}
 

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/blics18/SendGrid/client"
 	"github.com/cyberdelia/go-metrics-graphite"
@@ -47,7 +48,8 @@ func NewBloomFilter(size int) *bloomFilter {
 }
 
 func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
-	// timer := metrics.GetOrRegisterTimer("bloom.Filter.populateTimer", nil)
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.populateTimer", nil)
+	start := time.Now()
 	// timer.Time(func() {})
 
 	if r.Body == nil {
@@ -91,13 +93,12 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.Itoa(http.StatusOK)))
 
 	metrics.GetOrRegisterCounter("bloom.Filter.populate", nil).Inc(1)
-	// perSecond("bloom.Filter.populatePS")
 
 	// metrics.GetOrRegisterGauge("bloom.Filter.populatePS", nil)
 	// metrics.Unregister("bloom.Filter.populatePS")
 
 	log.Printf("hit")
-	// timer.Stop()
+
 
 	for _, user := range users {
 		for _, email := range user.Email {
@@ -106,9 +107,16 @@ func (bf *bloomFilter) populateBF(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(fmt.Sprintf("Email: %s", email))
 		}
 	}
+
+	duration := time.Since(start)
+	//timer.Update(time.Duration(duration.Seconds()))
+	timer.Update(duration)
 }
 
 func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
+	timer := metrics.GetOrRegisterTimer("bloom.Filter.checkBF", nil)
+	start := time.Now()
+
 	if r.Body == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Need content to check"))
@@ -179,6 +187,10 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(statJSON)
+
+	duration := time.Since(start)
+	//timer.Update(time.Duration(duration.Seconds()))
+	timer.Update(duration)
 }
 
 func crossCheck(db *sql.DB, cfg client.Config, UserID *int, Email string) (bool, error) {

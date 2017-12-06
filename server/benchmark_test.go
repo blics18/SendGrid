@@ -75,4 +75,3 @@ func BenchmarkCheck10(b *testing.B) {
 // 	for n := 0; n < len(users); n++ {
 // 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
 // 	}
-// }

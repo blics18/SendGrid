@@ -40,3 +40,28 @@ $ govend -v                                          # download all the dependen
 
   1. Change into directory of server_test.go
   2. In the terminal, type "go test"
+  
+## How to get Graphite Visualization
+  1. Make sure that docker is downloaded and running. (Docker for windows if you are a Windows user)
+  2. Use command docker run -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona
+  3. Make sure you have these links:
+        go get github.com/rcrowley/go-metrics/...
+        go get github.com/cyberdelia/go-metrics-graphite
+  4. Make sure you import these into server. Import "net" as well
+  5. Create the metrics registry inside of CreatebloomFilter func in Server (Default code on rcrowley, keep the default port (2003)
+  6. Set up Graphite in docker:
+        docker run -d\
+         --name graphite\
+         --restart=always\
+         -p 80:80\
+         -p 2003-2004:2003-2004\
+         -p 2023-2024:2023-2024\
+         -p 8125:8125/udp\
+         Visit https://github.com/hopsoft/docker-graphite-statsd for more info
+  7. docker ps -a shows what you have to make sure you have Graphite up and running
+  8. Add code to whereever you want to store metrics.
+  9. Start server and test using curl commands. Ex: curl localhost:8082/populateBF -d "[{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}]" populates the Bloom Filter with user JSON.
+  10. Go to localhost in browser to check and configure your metrics.
+
+
+

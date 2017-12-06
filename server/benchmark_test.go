@@ -16,7 +16,6 @@ import (
 )
 
 func BenchmarkClear(b *testing.B) {
-<<<<<<< HEAD
 	client.PopulateDB(10, 100, 5)
 	cfg := client.GetEnv()
 	b.ResetTimer()
@@ -25,15 +24,10 @@ func BenchmarkClear(b *testing.B) {
 		b.StopTimer()
 		client.Clear(cfg)
 		b.StartTimer()
-=======
-	for n := 0; n < b.N; n++ {
-		client.Clear()
->>>>>>> master
 	}
 }
 
 func BenchmarkPopulate(b *testing.B) {
-<<<<<<< HEAD
 	client.PopulateDB(10, 100, 5)
 	cfg := client.GetEnv()
 	b.ResetTimer()
@@ -82,15 +76,3 @@ func BenchmarkCheck10(b *testing.B) {
 // 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
 // 	}
 // }
-=======
-	for n := 0; n < b.N; n++ {
-		client.Populate()
-	}
-}
-
-func BenchmarkCheck(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		client.Check()
-	}
-}
->>>>>>> master

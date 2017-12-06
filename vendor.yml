@@ -1,12 +1,16 @@
 vendors:
-- path: github.com/blics18/SendGrid
-  rev: 22077f6c205d757a272bb441a69a6ea7d9a7d184
+- path: github.com/caarlos0/env
+  rev: 2eb62c9a31114310efda953408ecd1c294b4db04
+- path: github.com/cyberdelia/go-metrics-graphite
+  rev: 39f87cc3b432bbb898d7c643c0e93cac2bc865ad
 - path: github.com/davecgh/go-spew
   rev: ecdeabc65495df2dec95d7c4a4c3e021903035e5
 - path: github.com/go-sql-driver/mysql
-  rev: 0aa39ff15f267e3545e9f7b5b51ba8e994f517c7
+  rev: 9181e3a86a19bacd63e68d43ae8b7b36320d8092
 - path: github.com/pmezard/go-difflib
   rev: 792786c7400a136282c1664665ae0a8db921c6c2
+- path: github.com/rcrowley/go-metrics
+  rev: e181e095bae94582363434144c61a9653aff6e50
 - path: github.com/spaolacci/murmur3
   rev: 9f5d223c60793748f04a9d5b4b4eacddfc1f755d
 - path: github.com/stretchr/testify
@@ -15,3 +19,5 @@ vendors:
   rev: 1a37ad96e8c1a11b20900a232874843b5174221f
 - path: github.com/willf/bloom
   rev: 54e3b963ee1652b06c4562cb9b6020ebc6e36e59
+- path: google.golang.org/appengine
+  rev: 9d8544a6b2c7df9cff240fcf92d7b2f59bc13416

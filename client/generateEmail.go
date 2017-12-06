@@ -28,7 +28,7 @@ func makeRandomEmail() string {
 }
 
 func makeRandomEmails(n int) []string {
-	email_list := make([]string, rand.Intn(n))
+	email_list := make([]string, rand.Intn(n)+1)
 	for i := range email_list {
 		email_list[i] = makeRandomEmail()
 	}

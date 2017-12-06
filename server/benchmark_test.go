@@ -42,12 +42,17 @@ func BenchmarkPopulate(b *testing.B) {
 
 func benchmarkCheck(i int, email []string, b *testing.B) {
 	db, _ := client.PopulateDB(10, 100, 5)
-	client.Populate()
+	cfg := client.GetEnv()
+	client.Populate(cfg)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		client.Check(i, email)
+		_, err := client.Check(cfg, i, email)
+		if err != nil{
+			b.Error(err)
+			b.FailNow()
+		}
 	}
-	client.DropTables(5, db)
+	// client.DropTables(5, db)
 	db.Close()
 }
 
@@ -65,9 +70,9 @@ func BenchmarkCheck10(b *testing.B) {
 	}
 }
 
-func BenchmarkCheck1000(b *testing.B) {
-	users := client.MakeRandomUsers(1000, 100)
-	for n := 0; n < len(users); n++ {
-		benchmarkCheck(*users[n].UserID, users[n].Email, b)
-	}
-}
+// func BenchmarkCheck1000(b *testing.B) {
+// 	users := client.MakeRandomUsers(1000, 100)
+// 	for n := 0; n < len(users); n++ {
+// 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
+// 	}
+// }

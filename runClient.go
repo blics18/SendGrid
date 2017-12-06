@@ -7,28 +7,41 @@ import (
 )
 
 func main() {
-	// runClient.go is where we run all of our functions that we write in Client.go. 
-	// If you'd like to test DropTables and Check, just uncomment the functions.
-	// If we decide to make a command-line interface, we'll write it here as well.
-	
-	fmt.Println("Starting Client")
+	fmt.Println("Starting Client...")
 
-	// populate the MySQL Database
-	db := client.PopulateDB()
+	cfg := client.GetEnv()
+
+	client.HealthCheck(cfg) // < -- Health Check Demo
+
+	db, err := client.PopulateDB(cfg.NumUsers, cfg.NumEmails, cfg.NumTables) // <-- Populate the DB Demo
+
+	if err != nil {
+		fmt.Println("Unable to populate database")
+		return
+	}
+
 	defer db.Close()
 
-	// populate the Bloom Filter from values in the MySQL Database
-	// client.Populate()
-	
-	// to check if values are in the Bloom Filter. Note: Remember to replace the value of b and the userID in Check to what they are in the MySQL DB.
-	// b := []string{"NmNTsOQJOl@aol.com"}
-	// client.Check(5, b)
+	client.Populate(cfg) // <-- Populate the BF demo
 
-	// drop all of the tables in UserStructs schema
-	// err := client.DropTables(db)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	userMap := client.ParseFile()
 
-	client.HealthCheck()
+	totalMisses := 0
+	totalEmails := 0
+	totalHits := 0
+
+	for userID, userEmails := range userMap {
+		resp, _ := client.Check(cfg, userID, userEmails) // <-- Check userID, email Demo
+
+		totalMisses += resp.Miss
+		totalHits += resp.Hits
+		totalEmails += resp.NumEmails
+
+		fmt.Println(fmt.Sprintf("Individual Hit Ratio for User %d: ", userID), float64(resp.Hits)/float64(resp.NumEmails))
+		fmt.Println(fmt.Sprintf("Individual Miss Ratio for User %d: ", userID), float64(resp.Miss)/float64(resp.NumEmails))
+		fmt.Println()
+	}
+
+	fmt.Println("Total Hits Ratio: ", float64(totalHits)/float64(totalEmails))
+	fmt.Println("Total Miss Ratio: ", float64(totalMisses)/float64(totalEmails))
 }

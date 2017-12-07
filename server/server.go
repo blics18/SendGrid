@@ -164,13 +164,16 @@ func (bf *bloomFilter) checkBF(w http.ResponseWriter, r *http.Request) {
 				statStruct.TotalSuppressions += 1
 				statStruct.NumEmails += 1
 				statStruct.Hits += 1
+				metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Hits", nil).Inc(1)
 			} else {
 				statStruct.Miss += 1
 				statStruct.NumEmails += 1
+				metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Miss", nil).Inc(1)
 			}
 		} else {
 			statStruct.NumEmails += 1
 			statStruct.Hits += 1
+			metrics.GetOrRegisterCounter("bloom.Filter.checkBF_Hits", nil).Inc(1)
 		}
 	}
 

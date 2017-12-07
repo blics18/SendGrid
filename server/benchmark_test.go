@@ -52,7 +52,6 @@ func benchmarkCheck(i int, email []string, b *testing.B) {
 			b.FailNow()
 		}
 	}
-	// client.DropTables(5, db)
 	db.Close()
 }
 

@@ -58,6 +58,14 @@ $ govend -v                                          # download all the dependen
   6. Add code to whereever you want to store metrics.
   7. Start server and test using curl commands. Ex: curl localhost:8082/populateBF -d "[{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}]" populates the Bloom Filter with user JSON.
   8. Go to localhost in browser to check and configure your metrics.
+  
+## Setting up MySQL
+Make sure that your working directory has the createTables.sql file.
+1. docker run -v $(pwd)/createTables.sql:/root/createTables.sql --name bfmysql -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona (creates docker container)
+2. docker exec -it bfmysql /bin/bash (Run command on container)
+3. cd /root (switch to where sql file was stored)
+4. mysql <createTables.sql (Creates schema using the file)
+5. mysql (If you want to check if database was made)
 
 
 

@@ -30,6 +30,15 @@ $ govend -v                                          # download all the dependen
 - checkBF    ```curl localhost:1234/checkBF -d "{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}"```
 - clearBF    ```curl localhost:1234/clearBF```
 
+## Environment Variables
+
+- ```BLOOM_SIZE``` size of the Bloom Filter
+- ```BLOOM_PORT``` port that the server will run on
+- ```BLOOM_NUM_USERS``` number of users that will be generated
+- ```BLOOM_NUM_EMAILS``` up to this number of emails that each user will have
+- ```BLOOM_NUM_HASH_FUNCTIONS``` number of hash functions
+- ```BLOOM_NUM_TABLES``` is NOT configurable, because createTables.sql is hard coded to create only 5 tables. 
+
 ## Files & Description:
 
 - ```client.go``` 
@@ -80,11 +89,11 @@ $ govend -v                                          # download all the dependen
          -p 2023-2024:2023-2024\
          -p 8125:8125/udp\```
   7. Run server.go, and test using curl commands
-  8. Go to localhost in browser to check and configure your metrics
+  8. Go to ```localhost``` in any browser to check and configure the metrics
   
 ## Setting up MySQL
 
 1. Create the docker container: ```docker run -v $(pwd)/createTables.sql:/root/createTables.sql --name bfmysql -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona```
 2. Run this command on the container: ```docker exec -it bfmysql /bin/bash```
 3. Change directories to where the .sql file is stored: ```cd /root```
-4. Run the file that creates the schema with ```mysql <createTables.sql```
+4. Run the file that creates the schema with ```mysql < createTables.sql```

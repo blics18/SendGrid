@@ -54,6 +54,8 @@ func PopulateDB(numUsers int, numEmails int, numTables int) (*sql.DB, error) {
 	return db, nil
 }
 
+//  For testing purposes
+
 func DropTables(numTables int, db *sql.DB) error {
 	for i := 0; i < numTables; i++ {
 		stmt := fmt.Sprintf("DROP TABLE Unsub%02d", i)

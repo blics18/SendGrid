@@ -1,18 +1,10 @@
 package main
 
 import (
-	// "bytes"
-	// "encoding/json"
-	// "fmt"
-	// "net/http"
-	// "net/http/httptest"
 	"testing"
 
 	"github.com/blics18/SendGrid/client"
-	// "github.com/rcrowley/go-metrics"
-	// "github.com/blics18/SendGrid/client"
-	// "github.com/stretchr/testify/assert"
-	// "github.com/willf/bloom"
+
 )
 
 func BenchmarkClear(b *testing.B) {
@@ -52,7 +44,7 @@ func benchmarkCheck(i int, email []string, b *testing.B) {
 			b.FailNow()
 		}
 	}
-	// client.DropTables(5, db)
+	client.DropTables(5, db)
 	db.Close()
 }
 
@@ -70,8 +62,8 @@ func BenchmarkCheck10(b *testing.B) {
 	}
 }
 
-// func BenchmarkCheck1000(b *testing.B) {
-// 	users := client.MakeRandomUsers(1000, 100)
-// 	for n := 0; n < len(users); n++ {
-// 		benchmarkCheck(*users[n].UserID, users[n].Email, b)
-// 	}
+func BenchmarkCheck1000(b *testing.B) {
+	users := client.MakeRandomUsers(1000, 100)
+	for n := 0; n < len(users); n++ {
+		benchmarkCheck(*users[n].UserID, users[n].Email, b)
+	}

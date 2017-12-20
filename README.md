@@ -18,44 +18,44 @@ $ govend -v                                          # download all the dependen
 
 ## Endpoints
 
-- healthBF: to check the status of the server
-- populateBF: to add data into the Bloom Filter
-- checkBF: To check if data is in the Bloom Filter
-- clearBF: to clear the Bloom Filter
+- ```healthBF```    check the status of the server
+- ```populateBF```  add data into the Bloom Filter
+- ```checkBF```     check if data exists in the Bloom Filter
+- ```clearBF```     clear the Bloom Filter
 
-## Hitting an endpoint: Curl command examples
+## Curl command examples
 
-- healthBF:   ```curl localhost:1234/healthBF```
-- populateBF: ```curl localhost:1234/populateBF -d "[{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}]"```
-- checkBF: ```curl localhost:1234/checkBF -d "{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}"```
-- clearBF: ```curl localhost:1234/clearBF```
+- healthBF   ```curl localhost:1234/healthBF```
+- populateBF ```curl localhost:1234/populateBF -d "[{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}]"```
+- checkBF    ```curl localhost:1234/checkBF -d "{\"UserID\": 123, \"Email\": [\"test@gmail.com\"]}"```
+- clearBF    ```curl localhost:1234/clearBF```
 
 ## Files & Description:
 
-- ```client.go```: 
-  - Populate() - grabs data from MySQL, packages it as a JSON, and sends it to populateBF endpoint.
-  - Clear() - calls clearBF endpoint to clear the bloom filter. 
-  - Check() - passes userid and list of emails to checkBF endpoint; calls checkBF to check if an input exists in the bloom   filter.
+- ```client.go``` 
+  - Populate() - grabs data from MySQL, packages it as a JSON, and sends it to populateBF endpoint
+  - Clear() - calls clearBF endpoint to clear the bloom filter
+  - Check() - passes userid and list of emails to checkBF endpoint; calls checkBF to check if an input exists in the bloom   filter
   
-- ```runClient.go```: the client "main", and what we used to demo. Calls on all relevant endpoints (health, populate, check). 
+- ```runClient.go``` the client "main", and what we used to demo. Calls on all relevant endpoints (health, populate, check) 
   
-- ```server.go```: 
-  - healthBF() - checks to see if the server is up and running.
-  - populateBF() - retreives the JSON data, parses it, and populates the bloom filter with it.
-  - checkBF() - retreives the JSON data, parses it, and checks the data against the bloom filter. Also cross checks against the MySQL database if the data exists within the bloom filter. 
-  - clearBF() - clears the bloom filter. 
+- ```server.go``` 
+  - healthBF() - checks to see if the server is up and running
+  - populateBF() - retreives the JSON data, parses it, and populates the bloom filter with it
+  - checkBF() - retreives the JSON data, parses it, and checks the data against the bloom filter. Also cross checks against the MySQL database if the data exists within the bloom filter
+  - clearBF() - clears the bloom filter
   
-- ```createTables.sql```: SQL file that creates the database and tables.
+- ```createTables.sql``` SQL file that creates the database and tables
 
-- ```database.go```: creates and inserts randomly-generated data into the MySQL database.
+- ```database.go``` creates and inserts randomly-generated data into the MySQL database
 
-- ```server_test.go```: unit testing
+- ```server_test.go``` unit testing
   
-- ```benchmark_test.go```: benchmarking for each endpoint except healthBF.
+- ```benchmark_test.go``` benchmarking for each endpoint except healthBF
   
-- ```generateEmail.go```: generates random userIDs and emails.
+- ```generateEmail.go``` generates random userIDs and emails
 
-- ```data.txt```: file with randomly generated data (filled with suppression data and NON-suppresion data).
+- ```data.txt``` file with randomly generated data (filled with suppression data and NON-suppresion data)
 
 ## How to do unit testing:
 
@@ -69,19 +69,18 @@ $ govend -v                                          # download all the dependen
   
 ## Graphite Visualization
 
-  1. Make sure that Docker is downloaded and running.
-  2. In the terminal, type ```docker run -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona```.
+  1. Make sure that Docker is downloaded and running
+  2. In the terminal, type ```docker run -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona```
   3. Set up Graphite in docker:
-        ```docker run -d\
+         ```docker run -d\
          --name graphite\
          --restart=always\
          -p 80:80\
          -p 2003-2004:2003-2004\
          -p 2023-2024:2023-2024\
-         -p 8125:8125/udp\
-         ```
-  7. Run server.go, and test using curl commands.
-  8. Go to localhost in browser to check and configure your metrics.
+         -p 8125:8125/udp\```
+  7. Run server.go, and test using curl commands
+  8. Go to localhost in browser to check and configure your metrics
   
 ## Setting up MySQL
 

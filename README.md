@@ -79,8 +79,7 @@ $ govend -v                                          # download all the dependen
 ## Graphite Visualization
 
   1. Make sure that Docker is downloaded and running
-  2. In the terminal, type ```docker run -it -d -e MYSQL_ALLOW_EMPTY_PASSWORD=1 -p 3306:3306 percona```
-  3. Set up Graphite in docker:
+  2. Set up Graphite in docker:
 
 ```
 docker run -d\
@@ -94,8 +93,8 @@ docker run -d\
  hopsoft/graphite-statsd
  ```
  
-  7. Run server.go, and test using curl commands
-  8. Go to ```localhost``` in any browser to check and configure the metrics
+  3. Run server.go, and test using curl commands
+  4. Go to ```localhost``` in any browser to check and configure the metrics
   
 ## Setting up MySQL
 

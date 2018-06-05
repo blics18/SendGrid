@@ -105,5 +105,5 @@ docker run -d\
 
 ## Additional Notes
 
-Hits: Number of ACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.
-Misses: Number of INACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.
+- Hits: Number of ACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.
+- Misses: Number of INACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.

@@ -102,3 +102,8 @@ docker run -d\
 2. Run this command on the container: ```docker exec -it bfmysql /bin/bash```
 3. Change directories to where the .sql file is stored: ```cd /root```
 4. Run the file that creates the schema with ```mysql < createTables.sql```
+
+## Additional Notes
+
+Hits: Number of ACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.
+Misses: Number of INACCURATE predictions. This has nothing to do if the value is in the Bloom Filter or not.
